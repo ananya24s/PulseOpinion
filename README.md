@@ -1,16 +1,118 @@
-# React + Vite
+# Pulse Opinion
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A modern public opinion and discussion platform where users can ask questions, express their opinions through likes and dislikes, and participate in discussions via comments.
 
-Currently, two official plugins are available:
+This project is currently being developed as part of my Software Development Internship and is being built incrementally, starting with the frontend UI.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+---
 
-## React Compiler
+## Features
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### Current (UI Prototype)
+- Modern responsive React UI
+- Ask Question section
+- Trending discussions feed
+- Question cards
+- Like & Dislike buttons
+- Expandable comments section
+- Clean, component-based architecture
 
-## Expanding the ESLint configuration
+### Planned
+- Node.js + Express backend
+- MySQL database integration
+- Create new questions
+- Store likes/dislikes
+- Comment system
+- REST APIs
+- Real-time discussion updates
+- Search and filtering
+- Authentication
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+---
+
+## Tech Stack
+
+### Frontend
+- React
+- Vite
+- CSS Modules
+- Modern CSS
+
+### Backend (Planned)
+- Node.js
+- Express.js
+- MySQL
+
+---
+
+## Project Structure
+
+```
+src/
+│
+├── components/
+│   ├── Navbar
+│   ├── QuestionForm
+│   ├── QuestionCard
+│   └── CommentSection
+│
+├── data/
+│   └── sampleData.js
+│
+├── styles/
+│   └── global.css
+│
+├── App.jsx
+└── main.jsx
+```
+
+---
+
+## Getting Started
+
+Clone the repository
+
+```bash
+git clone https://github.com/ananya24s/YOUR_REPOSITORY_NAME.git
+```
+
+Install dependencies
+
+```bash
+npm install
+```
+
+Start the development server
+
+```bash
+npm run dev
+```
+
+Open
+
+```
+http://localhost:5173
+```
+
+---
+
+## Development Status
+
+🚧 Work in Progress
+
+Current Phase:
+- ✅ Frontend UI
+- ⏳ Backend Development
+- ⏳ Database Integration
+- ⏳ API Development
+
+---
+
+## Author
+
+**Ananya Singh**
+
+B.Tech Computer Science Engineering  
+Software Development Intern
+
+---
