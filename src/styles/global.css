@@ -1,55 +1,66 @@
-/*
-   Global Styles — PulseOpinion */
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-
-*, *::before, *::after {
+*,
+*::before,
+*::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
 
 :root {
-  --indigo:        #1a1d3b;
-  --violet:        #6c63ff;
-  --violet-hover:  #5a52e0;
-  --violet-light:  #eeedfe;
+  /* Brand */
+  --primary: #1E3A8A;
+  --primary-hover: #1D4ED8;
+  --accent: #06B6D4;
+  --accent-hover: #0891B2;
+  --accent-light: #CFFAFE;
 
-  --bg:            #f4f5fb;
-  --card:          #ffffff;
-  --card-inner:    #fafbff;
-  --border:        #e4e6f0;
+  /* Old variable compatibility */
+  --indigo: var(--primary);
+  --violet: var(--accent);
+  --violet-hover: var(--accent-hover);
+  --violet-light: var(--accent-light);
 
-  --text-primary:   #1a1d3b;
-  --text-secondary: #5c5f7a;
-  --text-muted:     #9497ae;
+  /* Background */
+  --bg: #F8FAFC;
+  --card: #FFFFFF;
+  --card-inner: #F8FAFC;
+  --border: #E2E8F0;
 
-  --like:          #22c58b;
-  --like-bg:       #eafaf4;
-  --dislike:       #e05252;
-  --dislike-bg:    #fceaea;
+  /* Text */
+  --text-primary: #0F172A;
+  --text-secondary: #475569;
+  --text-muted: #94A3B8;
 
-  --radius-card:   16px;
-  --radius-btn:    10px;
-  --shadow:        0 2px 16px rgba(28, 30, 60, 0.07);
-  --shadow-hover:  0 6px 28px rgba(28, 30, 60, 0.13);
+  /* Voting */
+  --like: #22C55E;
+  --like-bg: #DCFCE7;
+  --dislike: #EF4444;
+  --dislike-bg: #FEE2E2;
+
+  /* UI */
+  --radius-card: 16px;
+  --radius-btn: 10px;
+  --shadow: 0 2px 16px rgba(15, 23, 42, 0.08);
+  --shadow-hover: 0 6px 28px rgba(15, 23, 42, 0.14);
 }
 
-html, body, #root {
+html,
+body,
+#root {
   min-height: 100vh;
 }
 
 body {
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   background: var(--bg);
   color: var(--text-primary);
   -webkit-font-smoothing: antialiased;
 }
 
-button {
-  font-family: 'Inter', sans-serif;
-}
-
-input, textarea {
-  font-family: 'Inter', sans-serif;
+button,
+input,
+textarea {
+  font-family: "Inter", sans-serif;
 }

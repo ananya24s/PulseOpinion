@@ -1,4 +1,197 @@
 .container {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 44px 20px 80px;
+}
+
+.header {
+  margin-bottom: 32px;
+}
+
+.heading {
+  font-size: 30px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.6px;
+  line-height: 1.2;
+}
+
+.headingAccent {
+  color: var(--accent);
+  font-style: normal;
+}
+
+.subtitle {
+  margin-top: 8px;
+  font-size: 15px;
+  color: var(--text-secondary);
+  line-height: 1.65;
+}
+
+.sectionLabel {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.sectionLabel span {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+
+.sectionLabel::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: 28px 14px 60px;
+  }
+  .heading {
+    font-size: 24px;
+  }
+}
+
+/* ---- Search + Sort controls ---- */
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+/* Search input wrapper — needed to position the icon inside */
+.searchWrap {
+  position: relative;
+  flex: 1;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 16px;
+  color: var(--text-muted);
+  pointer-events: none; /* so clicking the icon focuses the input */
+}
+
+.searchInput {
+  width: 100%;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-btn);
+  padding: 10px 36px 10px 38px; /* left padding for icon, right for clear btn */
+  font-size: 14px;
+  color: var(--text-primary);
+  background: var(--card);
+  outline: none;
+  font-family: 'Inter', sans-serif;
+  transition: border-color 0.18s, box-shadow 0.18s;
+}
+
+.searchInput::placeholder {
+  color: var(--text-muted);
+}
+
+.searchInput:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-light);
+}
+
+/* Clear (×) button inside the search input */
+.clearBtn {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: 18px;
+  line-height: 1;
+  padding: 2px 4px;
+  transition: color 0.15s;
+}
+
+.clearBtn:hover {
+  color: var(--text-primary);
+}
+
+/* Sort dropdown — same visual style as the category dropdown in the form */
+.sortSelect {
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-btn);
+  padding: 10px 30px 10px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  background: var(--card);
+  cursor: pointer;
+  outline: none;
+  font-family: 'Inter', sans-serif;
+  transition: border-color 0.18s;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394A3B8' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.sortSelect:focus {
+  border-color: var(--accent);
+}
+
+/* Empty state — shown when search finds no results */
+.emptySearch {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text-muted);
+}
+
+.emptySearch p {
+  font-size: 15px;
+  margin-bottom: 16px;
+}
+
+.emptySearchClear {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  padding: 9px 20px;
+  border-radius: var(--radius-btn);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.16s;
+  font-family: 'Inter', sans-serif;
+}
+
+.emptySearchClear:hover {
+  background: var(--primary-hover);
+}
+
+@media (max-width: 480px) {
+  .controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .sortSelect {
+    width: 100%;
+  }
+}
+/*old code v2*/
+/* .container {
   max-width: 1000px;
   margin: 0 auto;
   padding: 44px 20px 80px;
@@ -58,4 +251,4 @@
   .heading {
     font-size: 24px;
   }
-}
+} */

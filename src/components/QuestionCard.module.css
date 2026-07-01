@@ -76,7 +76,7 @@
 .voteBarWrap {
   margin: 0 -24px;
   height: 5px;
-  background: #eceef5;
+  background: var(--border);
 }
 
 .voteBarFill {
@@ -133,8 +133,8 @@
 }
 
 .comment:hover {
-  background: var(--violet-light) !important;
-  color: var(--violet) !important;
+  background: var(--accent-light) !important;
+  color: var(--accent) !important;
 }
 
 .divider {
@@ -166,4 +166,18 @@
   .voteBarWrap {
     margin: 0 -18px;
   }
+}
+
+/* Active state — when user has already liked this question */
+.likeActive {
+  background: var(--like-bg) !important;
+  color: var(--like) !important;
+  font-weight: 600;
+}
+
+/* Active state — when user has already disliked this question */
+.dislikeActive {
+  background: var(--dislike-bg) !important;
+  color: var(--dislike) !important;
+  font-weight: 600;
 }

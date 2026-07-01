@@ -81,7 +81,7 @@
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: var(--violet);
+  background: var(--accent);
   color: #fff;
   font-size: 12px;
   font-weight: 700;
@@ -108,11 +108,11 @@
 }
 
 .input:focus {
-  border-color: var(--violet);
+  border-color: var(--accent);
 }
 
 .postBtn {
-  background: var(--violet);
+  background: var(--primary);
   color: #fff;
   border: none;
   padding: 9px 18px;
@@ -125,5 +125,38 @@
 }
 
 .postBtn:hover {
-  background: var(--violet-hover);
+  background: var(--primary-hover);
+}
+
+/* Small count badge next to "Discussion" label */
+.commentCount {
+  background: var(--accent-light);
+  color: var(--accent);
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 7px;
+  border-radius: 20px;
+  letter-spacing: 0;
+}
+
+/* Shown when there are no comments yet */
+.emptyState {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 20px;
+  font-style: italic;
+}
+
+/* Disabled state for Post button */
+.postBtn:disabled {
+  background: var(--border);
+  color: var(--text-muted);
+  cursor: not-allowed;
+}
+
+/* Make label flex so badge sits beside it */
+.label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
