@@ -8,6 +8,7 @@ import QuestionForm from './components/QuestionForm';
 import QuestionCard from './components/QuestionCard';
 import { sampleQuestions } from './data/sampleData';
 import styles from './App.module.css';
+import SignInModal from './components/SignInModal';
 
 export default function App() {
   // Master list of all questions (sample + user-submitted)
@@ -19,6 +20,7 @@ export default function App() {
   // Sort option — controls the order of the feed
   // Options: 'latest' | 'mostLiked' | 'mostCommented'
   const [sortBy, setSortBy] = useState('latest');
+  const [showSignIn, setShowSignIn] = useState(false);
 
   // Called by QuestionForm with (text, category) when user submits
   function handleAddQuestion(text, category) {
@@ -74,7 +76,10 @@ export default function App() {
 
   return (
     <div>
-      <Navbar />
+      <Navbar onSignInClick={() => setShowSignIn(true)} />
+      <SignInModal isOpen={showSignIn}
+  onClose={() => setShowSignIn(false)}
+/>
       <main className={styles.container}>
         {/* Page Header */}
         <header className={styles.header}>
@@ -163,6 +168,7 @@ export default function App() {
     </div>
   );
 }
+
 //OLD CODE V2
 //  import { useState } from 'react';  // useState lets us store and update data inside a component
 // import './styles/global.css';

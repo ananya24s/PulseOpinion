@@ -1,7 +1,7 @@
 .nav {
   background: var(--primary);
   padding: 0 32px;
-  height: 60px;
+  height: 45px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -12,6 +12,22 @@
 }
 
 .logo {
+  color: #fffdfd;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.logoImage {
+  height: 65px;
+  width: auto;
+  display: block;
+}
+
+/* .logo {
   color: #fff;
   font-size: 18px;
   font-weight: 700;
@@ -23,7 +39,7 @@
 
 .logoAccent {
   color: var(--accent);
-}
+} */
 
 .badge {
   background: var(--accent);
