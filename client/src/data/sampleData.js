@@ -70,7 +70,7 @@ export const sampleQuestions = [
     comments: [
       {
         id: 1,
-        name: "Kavya N.",
+        name: "YouG",
         initials: "KN",
         avatarColor: "#22c58b",
         timeAgo: "20h ago",

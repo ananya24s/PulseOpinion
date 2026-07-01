@@ -39,7 +39,10 @@ export default function App() {
     // Prepend new question to top of the list
     setQuestions([newQuestion, ...questions]);
   }
-
+   // Clears the search input
+   function clearSearch() {
+   setSearchQuery('');
+  }
   // --- SEARCH + SORT (computed, not stored) ---
   // useMemo means this only re-runs when questions, searchQuery, or sortBy changes.
   // Without useMemo it would recalculate on every single render.
@@ -119,7 +122,7 @@ export default function App() {
               <button
                 className={styles.clearBtn}
                 onClick={() => setSearchQuery('')}
-                aria-label="Clear search"
+                aria-label="Clear search" 
               >
                 ×
               </button>
@@ -154,7 +157,7 @@ export default function App() {
             // Empty state when search finds nothing
             <div className={styles.emptySearch}>
               <p>No questions match your search.</p>
-              <button className={styles.emptySearchClear} onClick={() => setSearchQuery('')}>
+              <button className={styles.emptySearchClear} onClick={clearSearch}>
                 Clear search
               </button>
             </div>
@@ -168,119 +171,3 @@ export default function App() {
     </div>
   );
 }
-
-//OLD CODE V2
-//  import { useState } from 'react';  // useState lets us store and update data inside a component
-// import './styles/global.css';
-// import Navbar from './components/Navbar';
-// import QuestionForm from './components/QuestionForm';
-// import QuestionCard from './components/QuestionCard';
-// import { sampleQuestions } from './data/sampleData';
-// import styles from './App.module.css';
-
-// export default function App() {
-//   // `questions` holds the full list shown in the feed.
-//   // We start it with the hardcoded sample data.
-//   // When the user submits a new question, we'll add it to the front of this array.
-//   const [questions, setQuestions] = useState(sampleQuestions);
-
-//   // This function is called by QuestionForm when the user clicks "Ask Question".
-//   // It receives the question text and builds a new question object, then
-//   // prepends it to the existing list using the spread operator [...].
-//   function handleAddQuestion(text) {
-//     const newQuestion = {
-//       id: Date.now(),          // unique ID using current timestamp
-//       author: 'You',
-//       initials: 'YU',
-//       avatarColor: '#06B6D4',  // cyan — matches the accent color
-//       timeAgo: 'Just now',
-//       tag: 'General',
-//       text: text,
-//       likes: 0,
-//       dislikes: 0,
-//       commentCount: 0,
-//       comments: [],
-//     };
-
-//     // setQuestions updates the state.
-//     // [newQuestion, ...questions] puts the new question first, then spreads the rest.
-//     setQuestions([newQuestion, ...questions]);
-//   }
-
-//   return (
-//     <div>
-//       <Navbar />
-//       <main className={styles.container}>
-//         {/* Page Header */}
-//         <header className={styles.header}>
-//           <h1 className={styles.heading}>
-//             What's on your <em className={styles.headingAccent}>mind?</em>
-//           </h1>
-//           <p className={styles.subtitle}>
-//             Ask questions, spark debates, and discover what the public really
-//             thinks — no sign-up needed.
-//           </p>
-//         </header>
-
-//         {/* Ask Question Section */}
-//         {/* We pass onSubmit down so QuestionForm can call it when the user clicks the button */}
-//         <QuestionForm onSubmit={handleAddQuestion} />
-
-//         {/* Feed */}
-//         <div className={styles.sectionLabel}>
-//           <span>Trending Discussions</span>
-//         </div>
-
-//         <section aria-label="Questions feed">
-//           {questions.map((q) => (
-//             <QuestionCard key={q.id} question={q} />
-//           ))}
-//         </section>
-//       </main>
-//     </div>
-//   );
-// }
-//OLD CODE V1
-// import './styles/global.css';
-// import Navbar from './components/Navbar';
-// import QuestionForm from './components/QuestionForm';
-// import QuestionCard from './components/QuestionCard';
-// import { sampleQuestions } from './data/sampleData';
-// import styles from './App.module.css';
-
-// export default function App() {
-//   return (
-//     <div>
-//       <Navbar />
-//       <main className={styles.container}>
-//         {/* Page Header */}
-//         <header className={styles.header}>
-//           <h1 className={styles.heading}>
-//             What's on your <em className={styles.headingAccent}>mind?</em>
-//           </h1>
-//           <p className={styles.subtitle}>
-//             Ask questions, spark debates, and discover what the public really
-//             thinks — no sign-up needed.
-//           </p>
-//         </header>
-
-//         {/* Ask Question Section */}
-//         <QuestionForm />
-
-//         {/* Feed */}
-//         <div className={styles.sectionLabel}>
-//           <span>Trending Discussions</span>
-//         </div>
-
-//         <section aria-label="Questions feed">
-//           {sampleQuestions.map((q) => (
-//             <QuestionCard key={q.id} question={q} />
-//           ))}
-//         </section>
-//       </main>
-//     </div>
-//   );
-// }
-// export default function App() {
-//   return <h1>Hello React</h1>;
-// }
