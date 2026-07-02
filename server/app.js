@@ -1,4 +1,5 @@
 require('dotenv').config();
+const authRoutes = require("./routes/authRoutes");
 const cors = require('cors');
 const express        = require('express');
 const questionRoutes = require('./routes/questionRoutes');
@@ -8,6 +9,7 @@ app.use(cors());
 app.use(express.json());
 
 app.use('/api/questions', questionRoutes);
+app.use("/api/auth", authRoutes);
 app.get('/api/health', (req, res) => {
   res.status(200).json({ success: true, message: 'PulseOpinion API is running.' });
 });
