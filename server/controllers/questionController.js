@@ -1,34 +1,25 @@
-// controllers/questionController.js
-//
-// Responsibility: handle HTTP request/response for each endpoint.
-// Validates input, calls the model, and sends back the right status + JSON.
-// No raw data manipulation happens here — that's the model's job.
-
 const questionModel = require('../models/questionModel');
 
-// ── GET /api/questions ────────────────────────────────────────────────────────
-// Returns every question, newest first.
 async function getQuestions(req, res) {
   try {
     const questions = await questionModel.getAllQuestions();
     res.status(200).json({ success: true, data: questions });
-  } catch (err) {
-    res.status(500).json({ success: false, message: 'Failed to fetch questions.' });
+  } catch(err){
+   console.error(err);
+   res.status(500).json({success: false,message: "Failed to fetch questions." });
   }
+    //catch (err) {
+    //res.status(500).json({ success: false, message: 'Failed to fetch questions.' });
+  //}
 }
-
-// ── POST /api/questions ───────────────────────────────────────────────────────
-// Creates a new question.
-// Body: { text: string, category?: string }
 async function createQuestion(req, res) {
   try {
     const { text, category } = req.body;
 
-    // Validation — text is required and must not be blank
     if (!text || !text.trim()) {
       return res.status(400).json({
         success: false,
-        message: 'Question text is required.',
+        message: "Question text is required.",
       });
     }
 
@@ -77,8 +68,6 @@ async function likeQuestion(req, res) {
   }
 }
 
-// ── PATCH /api/questions/:id/dislike ──────────────────────────────────────────
-// Increments the dislike count by 1.
 async function dislikeQuestion(req, res) {
   try {
     const id = Number(req.params.id);
