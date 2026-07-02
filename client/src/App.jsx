@@ -1,4 +1,5 @@
 //new code with backend logic connected
+import SignInModal from './components/SignInModal';
 import { useState, useEffect, useMemo } from 'react';
 import './styles/global.css';
 import Navbar from './components/Navbar';
@@ -43,7 +44,7 @@ function formatTimeAgo(isoString) {
 export default function App() {
   
   const [questions, setQuestions]   = useState([]);
-
+  const [showSignIn, setShowSignIn] = useState(false);
   const [loading, setLoading]       = useState(true);
   const [fetchError, setFetchError] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -104,11 +105,10 @@ export default function App() {
       return b.id - a.id; // 'latest'
     });
   }, [questions, searchQuery, sortBy]);
-
-  // ── Render ──────────────────────────────────────────────────────────────────
   return (
     <div>
-      <Navbar />
+      <Navbar onSignInClick={()=>setShowSignIn(true)}/>
+        <SignInModal isOpen={showSignIn} onClose={() => setShowSignIn(false)} />
       <main className={styles.container}>
         {/* Page Header */}
         <header className={styles.header}>
@@ -389,4 +389,4 @@ export default function App() {
 //       </main>
 //     </div>
 //   );
-// }
+//}

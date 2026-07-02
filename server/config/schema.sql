@@ -1,20 +1,7 @@
--- =============================================================================
--- PulseOpinion — MySQL Schema + Seed Data
--- Database: pulse_opinion
--- =============================================================================
--- Run with:
---   mysql -u root -p pulse_opinion < schema.sql
--- =============================================================================
- 
--- Safety: drop tables in reverse dependency order before recreating them.
--- This makes the file safe to re-run during development.
 SET FOREIGN_KEY_CHECKS = 0;
 DROP TABLE IF EXISTS comments;
 DROP TABLE IF EXISTS questions;
 SET FOREIGN_KEY_CHECKS = 1;
--- =============================================================================
--- TABLE: questions
--- =============================================================================
 CREATE TABLE questions (
   id            INT UNSIGNED    NOT NULL AUTO_INCREMENT,
   author        VARCHAR(100)    NOT NULL,
@@ -73,10 +60,6 @@ CREATE TABLE comments (
 ) ENGINE=InnoDB
   DEFAULT CHARSET=utf8mb4
   COLLATE=utf8mb4_unicode_ci;
- 
--- =============================================================================
--- SEED DATA: questions
--- =============================================================================
 INSERT INTO questions (author, question_text, category, likes, dislikes, created_at) VALUES
  
 (
