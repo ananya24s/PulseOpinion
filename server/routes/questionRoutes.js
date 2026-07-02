@@ -1,8 +1,3 @@
-// routes/questionRoutes.js
-//
-// Responsibility: declare which HTTP method + URL maps to which controller.
-// No logic lives here — routes are just a routing table.
-
 const express    = require('express');
 const router     = express.Router();
 const controller = require('../controllers/questionController');

@@ -5,13 +5,11 @@
 // makes it easy to test the app without binding a real port.
 
 const express       = require('express');
+const cors = require("cors");
 const questionRoutes = require('./routes/questionRoutes');
 
 const app = express();
-
-// ── Middleware ────────────────────────────────────────────────────────────────
-
-// Parse incoming JSON request bodies (already present in your project)
+app.use(cors());
 app.use(express.json());
 
 // ── Routes ────────────────────────────────────────────────────────────────────
