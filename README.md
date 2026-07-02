@@ -1,118 +1,257 @@
-# Pulse Opinion
+# 🗳️ PulseOpinion
 
-A modern public opinion and discussion platform where users can ask questions, express their opinions through likes and dislikes, and participate in discussions via comments.
+PulseOpinion is a full-stack discussion platform where users can ask questions, participate in public discussions, and engage through likes, dislikes, and comments.
 
-This project is currently being developed as part of my Software Development Internship and is being built incrementally, starting with the frontend UI.
-
----
-
-## Features
-
-### Current (UI Prototype)
-- Modern responsive React UI
-- Ask Question section
-- Trending discussions feed
-- Question cards
-- Like & Dislike buttons
-- Expandable comments section
-- Clean, component-based architecture
-
-### Planned
-- Node.js + Express backend
-- MySQL database integration
-- Create new questions
-- Store likes/dislikes
-- Comment system
-- REST APIs
-- Real-time discussion updates
-- Search and filtering
-- Authentication
+The project is being built incrementally with a focus on clean architecture, scalable backend design, and a responsive user experience.
 
 ---
 
-## Tech Stack
+## ✨ Current Features
+
+- 📝 Ask new questions
+- 🔍 Search questions
+- 📊 Sort by Latest, Most Liked, and Most Commented
+- 👍 Like & 👎 Dislike interactions
+- 💬 Comment system
+- 🔐 Sign In modal (UI)
+- ⚡ Loading and error states
+- 🌐 React frontend connected to an Express backend
+
+---
+
+## 🛠️ Tech Stack
 
 ### Frontend
 - React
 - Vite
 - CSS Modules
-- Modern CSS
 
-### Backend (Planned)
+### Backend
 - Node.js
 - Express.js
-- MySQL
+
+### Current Data Layer
+- In-memory storage (temporary)
 
 ---
 
-## Project Structure
+## 📂 Project Structure
 
-```
-src/
+```text
+PulseOpinion/
 │
-├── components/
-│   ├── Navbar
-│   ├── QuestionForm
-│   ├── QuestionCard
-│   └── CommentSection
+├── client/
+│   ├── public/
+│   ├── src/
+│   └── ...
 │
-├── data/
-│   └── sampleData.js
+├── server/
+│   ├── controllers/
+│   ├── models/
+│   ├── routes/
+│   ├── middleware/
+│   ├── config/
+│   ├── app.js
+│   └── server.js
 │
-├── styles/
-│   └── global.css
-│
-├── App.jsx
-└── main.jsx
+└── README.md
 ```
 
 ---
 
-## Getting Started
+## 🚀 Getting Started
 
-Clone the repository
+### Clone the repository
 
 ```bash
-git clone https://github.com/ananya24s/YOUR_REPOSITORY_NAME.git
+git clone https://github.com/ananya24s/PulseOpinion.git
+cd PulseOpinion
 ```
 
-Install dependencies
+### Frontend
 
 ```bash
+cd client
 npm install
-```
-
-Start the development server
-
-```bash
 npm run dev
 ```
 
-Open
+Runs on:
 
 ```
 http://localhost:5173
 ```
 
+### Backend
+
+```bash
+cd server
+npm install
+node server.js
+```
+
+Runs on:
+
+```
+http://localhost:5000
+```
+
 ---
 
-## Development Status
+## 📡 API Endpoints
 
-🚧 Work in Progress
-
-Current Phase:
-- ✅ Frontend UI
-- ⏳ Backend Development
-- ⏳ Database Integration
-- ⏳ API Development
+| Method | Endpoint | Description |
+|---------|----------|-------------|
+| GET | `/api/questions` | Fetch all questions |
+| POST | `/api/questions` | Create a new question |
+| PATCH | `/api/questions/:id/like` | Like a question |
+| PATCH | `/api/questions/:id/dislike` | Dislike a question |
+| POST | `/api/questions/:id/comments` | Add a comment |
 
 ---
 
-## Author
+## 📌 Roadmap
+
+- ✅ Interactive React frontend
+- ✅ Express backend
+- ✅ REST API
+- ✅ Frontend ↔ Backend integration
+- ⏳ MySQL database integration
+- ⏳ Authentication
+- ⏳ Deployment
+
+---
+
+## 👩‍💻 Author
 
 **Ananya Singh**
 
-B.Tech Computer Science Engineering  
-Software Development Intern
+Built as a learning project to explore full-stack application development using React and Express while following clean architecture principles.# 🗳️ PulseOpinion
+
+PulseOpinion is a full-stack discussion platform where users can ask questions, participate in public discussions, and engage through likes, dislikes, and comments.
+
+The project is being built incrementally with a focus on clean architecture, scalable backend design, and a responsive user experience.
 
 ---
+
+## ✨ Current Features
+
+- 📝 Ask new questions
+- 🔍 Search questions
+- 📊 Sort by Latest, Most Liked, and Most Commented
+- 👍 Like & 👎 Dislike interactions
+- 💬 Comment system
+- 🔐 Sign In modal (UI)
+- ⚡ Loading and error states
+- 🌐 React frontend connected to an Express backend
+
+---
+
+## 🛠️ Tech Stack
+
+### Frontend
+- React
+- Vite
+- CSS Modules
+
+### Backend
+- Node.js
+- Express.js
+
+### Current Data Layer
+- In-memory storage (temporary)
+
+---
+
+## 📂 Project Structure
+
+```text
+PulseOpinion/
+│
+├── client/
+│   ├── public/
+│   ├── src/
+│   └── ...
+│
+├── server/
+│   ├── controllers/
+│   ├── models/
+│   ├── routes/
+│   ├── middleware/
+│   ├── config/
+│   ├── app.js
+│   └── server.js
+│
+└── README.md
+```
+
+---
+
+## 🚀 Getting Started
+
+### Clone the repository
+
+```bash
+git clone https://github.com/ananya24s/PulseOpinion.git
+cd PulseOpinion
+```
+
+### Frontend
+
+```bash
+cd client
+npm install
+npm run dev
+```
+
+Runs on:
+
+```
+http://localhost:5173
+```
+
+### Backend
+
+```bash
+cd server
+npm install
+node server.js
+```
+
+Runs on:
+
+```
+http://localhost:5000
+```
+
+---
+
+## 📡 API Endpoints
+
+| Method | Endpoint | Description |
+|---------|----------|-------------|
+| GET | `/api/questions` | Fetch all questions |
+| POST | `/api/questions` | Create a new question |
+| PATCH | `/api/questions/:id/like` | Like a question |
+| PATCH | `/api/questions/:id/dislike` | Dislike a question |
+| POST | `/api/questions/:id/comments` | Add a comment |
+
+---
+
+## 📌 Roadmap
+
+- ✅ Interactive React frontend
+- ✅ Express backend
+- ✅ REST API
+- ✅ Frontend ↔ Backend integration
+- ⏳ MySQL database integration
+- ⏳ Authentication
+- ⏳ Deployment
+
+---
+
+## 👩‍💻 Author
+
+**Ananya Singh**
+
+Built as a learning project to explore full-stack application development using React and Express while following clean architecture principles.
