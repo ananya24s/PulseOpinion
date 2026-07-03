@@ -255,7 +255,21 @@
 .retryBtn:hover {
   opacity: 0.88;
 }
+.backToAllBtn {
+  border: none;
+  background: transparent;
+  color: var(--primary);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 0;
+  margin: 4px 0 14px;
+}
 
+.backToAllBtn:hover {
+  text-decoration: underline;
+}
 /*old working code with no backend logic*/
 /* .container {
   max-width: 720px;

@@ -8,4 +8,5 @@ router.post("/", authenticate, controller.createQuestion);
 router.patch('/:id/like', authenticate, controller.likeQuestion);
 router.patch('/:id/dislike', authenticate, controller.dislikeQuestion);
 router.post('/:id/comments', authenticate, controller.addComment);
+router.delete('/:id', authenticate, controller.deleteQuestion);
 module.exports = router;

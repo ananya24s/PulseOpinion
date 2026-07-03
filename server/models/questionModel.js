@@ -38,24 +38,20 @@ async function fetchQuestionWithComments(id) {
 async function getAllQuestions(userId) {
   const [questionRows] = await pool.execute(
     `SELECT
-       id,
-       question_text  AS text,
-       author,
-       category,
-       likes,
-       dislikes,
-       created_at     AS createdAt
+      id,
+      user_id        AS userId,
+      question_text  AS text,
+      author,
+      category,
+      likes,
+      dislikes,
+      created_at     AS createdAt
      FROM questions
      ORDER BY created_at DESC`
   );
-
+ 
   if (questionRows.length === 0) return [];
-
-  // Collect all question IDs so we can fetch all comments in one query
-  // instead of one query per question (avoids the N+1 problem).
   const ids = questionRows.map((q) => q.id);
-
-  // mysql2 handles arrays in IN(?) by expanding them correctly
   const [commentRows] = await pool.execute(
     `SELECT
        id,
@@ -102,7 +98,30 @@ async function getAllQuestions(userId) {
   comments: commentsByQuestion.get(q.id) ?? [],
   }));
 }
+async function deleteQuestion(questionId, userId) {
+  const [rows] = await pool.execute(
+    `SELECT user_id
+     FROM questions
+     WHERE id = ?`,
+    [questionId]
+  );
 
+  if (rows.length === 0) {
+    return 'not_found';
+  }
+
+  if (Number(rows[0].user_id) !== Number(userId)) {
+    return 'forbidden';
+  }
+
+  await pool.execute(
+    `DELETE FROM questions
+     WHERE id = ? AND user_id = ?`,
+    [questionId, userId]
+  );
+
+  return 'deleted';
+}
 async function createQuestion({ text, category, userId }) {
   const [userRows] = await pool.execute(
     `SELECT name FROM users WHERE id = ?`,
@@ -260,9 +279,10 @@ async function addComment(questionId, { text, userId }) {
 
 module.exports = {
   getAllQuestions,
-  getQuestionById: fetchQuestionWithComments, // kept for any future controller use
+  getQuestionById: fetchQuestionWithComments,/*kept for any future controller use*/
   createQuestion,
   likeQuestion,
   dislikeQuestion,
   addComment,
+  deleteQuestion,
 };

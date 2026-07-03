@@ -6,7 +6,7 @@ import Navbar from './components/Navbar';
 import QuestionForm from './components/QuestionForm';
 import QuestionCard from './components/QuestionCard';
 import styles from './App.module.css';
-
+import ProfileView from './components/ProfileView'; 
 const API_BASE = 'http://localhost:5000/api';
 function normaliseQuestion(q) {
   return {
@@ -40,15 +40,6 @@ function formatTimeAgo(isoString) {
   if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
   return `${Math.floor(seconds / 86400)}d ago`;
 }
-function handleLogout() {
-  setUser(null);
-  setToken(null);
-
-  localStorage.removeItem('pulseUser');
-  localStorage.removeItem('pulseToken');
-  sessionStorage.removeItem('pulseUser');
-  sessionStorage.removeItem('pulseToken');
-}
 export default function App() {
   
   const [questions, setQuestions]   = useState([]);
@@ -57,10 +48,25 @@ export default function App() {
   const [fetchError, setFetchError] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy]           = useState('latest');
-  const [user, setUser] = useState(() => {const saved = localStorage.getItem('pulseUser');return saved ? JSON.parse(saved) : null;});
-  const [token, setToken] = useState(() =>localStorage.getItem('pulseToken'));
+  const [view, setView] = useState('all');
+  const [user, setUser] = useState(() => {
+   const saved =
+    localStorage.getItem('pulseUser') ||
+    sessionStorage.getItem('pulseUser');
+    return saved ? JSON.parse(saved) : null;});
+   const [token, setToken] = useState(() =>
+   localStorage.getItem('pulseToken') ||
+   sessionStorage.getItem('pulseToken'));
   useEffect(() => {fetchQuestions();}, [token]);
+  function handleLogout() {
+   setUser(null);
+   setToken(null);
 
+   localStorage.removeItem("pulseUser");
+   localStorage.removeItem("pulseToken");
+   sessionStorage.removeItem("pulseUser");
+   sessionStorage.removeItem("pulseToken");
+   }
   async function fetchQuestions() {
     setLoading(true);
     setFetchError(null);
@@ -106,29 +112,92 @@ export default function App() {
       alert('Failed to post question. Please check your connection and try again.');
     }
   }
+  async function handleDeleteQuestion(questionId) {
+   const confirmed = window.confirm(
+    'Delete this question? This cannot be undone.');
+
+   if (!confirmed) return;
+
+   try {
+    const res = await fetch(`${API_BASE}/questions/${questionId}`, {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    const json = await res.json();
+
+    if (!res.ok) {
+      throw new Error(json.message || 'Failed to delete question.');
+    }
+
+    setQuestions((prev) =>
+      prev.filter((q) => q.id !== questionId)
+    );
+   } catch (err) {
+    alert(err.message);}
+   }
   const filteredAndSorted = useMemo(() => {
     const query = searchQuery.toLowerCase().trim();
 
-    const filtered = query
-      ? questions.filter(
-          (q) =>
-            q.text.toLowerCase().includes(query) ||
-            q.author.toLowerCase().includes(query) ||
-            q.tag.toLowerCase().includes(query)
-        )
-      : questions;
+    let filtered = questions;
+     if (view === 'mine' && user) {
+      filtered = filtered.filter(
+      (q) => q.userId === user.id);
+     }
+     if (query) {
+      filtered = filtered.filter(
+     (q) =>
+      q.text.toLowerCase().includes(query) ||
+      q.author.toLowerCase().includes(query) ||
+      q.tag.toLowerCase().includes(query));
+    }
 
     return [...filtered].sort((a, b) => {
       if (sortBy === 'mostLiked')     return b.likes - a.likes;
       if (sortBy === 'mostCommented') return b.comments.length - a.comments.length;
       return b.id - a.id; // 'latest'
     });
-  }, [questions, searchQuery, sortBy]);
+  }, [questions, searchQuery, sortBy,view,user ]);
   return (
     <div>
-      <Navbar onSignInClick={() => setShowSignIn(true)} user={user} onLogout={handleLogout}/>
-        <SignInModal isOpen={showSignIn}onClose={() => setShowSignIn(false)}onLogin={handleLogin}/>
+      <Navbar
+      user={user}
+      onSignInClick={() => setShowSignIn(true)}
+      onLogout={handleLogout}
+
+      onTrendingClick={() => {
+      setView('all');
+      setSearchQuery('');
+     document
+      .querySelector('[aria-label="Questions feed"]')
+      ?.scrollIntoView({ behavior: 'smooth' });
+     }}
+
+     onCategoriesClick={() => {
+     setView('all');
+     document
+      .querySelector('[aria-label="Search questions"]')
+      ?.focus();
+     }}
+
+     onAboutClick={() => setView('about')}
+     onProfileClick={() => setView('profile')}
+     onMyQuestionsClick={() => {
+     setView('mine');
+     setSearchQuery('');
+     }}/>
+     
+    <SignInModal isOpen={showSignIn}onClose={() => setShowSignIn(false)}onLogin={handleLogin}/>
       <main className={styles.container}>
+      {view === 'profile' ? (
+     <ProfileView
+      user={user}
+      questions={questions}
+      onBack={() => setView('all')}/>
+    ) : (
+    <>
         {/* Page Header */}
         <header className={styles.header}>
           <h1 className={styles.heading}>
@@ -136,7 +205,7 @@ export default function App() {
           </h1>
           <p className={styles.subtitle}>
             Ask questions, spark debates, and discover what the public really
-            thinks — no sign-up needed.
+            thinks.
           </p>
         </header>
 
@@ -182,18 +251,22 @@ export default function App() {
             <option value="mostCommented">Most Commented</option>
           </select>
         </div>
-
+        {view === 'mine' && (
+        <button
+         className={styles.backToAllBtn}onClick={() => {setView('all');setSearchQuery('');}}> 
+         ← Back to all discussions</button>)}
         {/* Section label */}
         <div className={styles.sectionLabel}>
-          <span>
-            {searchQuery
-              ? `${filteredAndSorted.length} result${filteredAndSorted.length !== 1 ? 's' : ''} for "${searchQuery}"`
-              : 'Trending Discussions'}
-          </span>
-        </div>
-
-        {/* ── Feed area — three possible states ─────────────────────────── */}
-
+        <span>
+        {view === 'mine'
+        ? `My Questions (${filteredAndSorted.length})`
+        : searchQuery
+         ? `${filteredAndSorted.length} result${
+          filteredAndSorted.length !== 1 ? 's' : ''
+         } for "${searchQuery}"`
+         : 'Trending Discussions'}
+       </span>
+       </div>
         {/* 1. Loading spinner */}
         {loading && (
           <div className={styles.loadingWrap} aria-label="Loading questions">
@@ -224,13 +297,14 @@ export default function App() {
               </div>
             ) : (
               filteredAndSorted.map((q) => (
-                <QuestionCard key={q.id} question={q} token={token} />
+                <QuestionCard key={q.id} question={q} token={token} currentUser={user} onDelete={handleDeleteQuestion}/>
               ))
             )}
           </section>
         )}
+          </>
+         )}
       </main>
     </div>
   );
 }
-

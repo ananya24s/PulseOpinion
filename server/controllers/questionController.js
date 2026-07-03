@@ -107,11 +107,61 @@ async function addComment(req, res) {
     res.status(500).json({ success: false, message: 'Failed to add comment.' });
   }
 }
+async function deleteQuestion(req, res) {
+  try {
+    const id = Number(req.params.id);
 
+    if (isNaN(id)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid question ID.',
+      });
+    }
+
+    const result = await questionModel.deleteQuestion(
+      id,
+      req.user.id
+    );
+
+    if (result === 'not_found') {
+      return res.status(404).json({
+        success: false,
+        message: 'Question not found.',
+      });
+    }
+
+    if (result === 'forbidden') {
+      return res.status(403).json({
+        success: false,
+        message: 'You can only delete your own questions.',
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: 'Question deleted successfully.',
+    });
+  } catch (err) {
+    console.error(err);
+
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to delete question.',
+    });
+  }
+}
 module.exports = {
   getQuestions,
   createQuestion,
   likeQuestion,
   dislikeQuestion,
   addComment,
+  deleteQuestion,
 };
+// module.exports = {
+//   getQuestions,
+//   createQuestion,
+//   likeQuestion,
+//   dislikeQuestion,
+//   addComment,
+// };

@@ -1,8 +1,6 @@
 import { useState } from 'react';
 import CommentSection from './CommentSection';
 import styles from './QuestionCard.module.css';
-
-// Tag color map — covers all 7 categories
 const TAG_STYLES = {
   Politics:      { color: '#1E3A8A', bg: '#DBEAFE' },
   Technology:    { color: '#0f6e56', bg: '#e1f5ee' },
@@ -11,6 +9,7 @@ const TAG_STYLES = {
   Entertainment: { color: '#be185d', bg: '#fce7f3' },
   Business:      { color: '#854f0b', bg: '#faeeda' },
   General:       { color: '#0e7490', bg: '#CFFAFE' },
+  Fashion:       { color: '#db1699', bg: '#fce7f3' },
 };
 
 function formatCount(n) {
@@ -18,21 +17,17 @@ function formatCount(n) {
   return String(n);
 }
 
-export default function QuestionCard({ question, token }) {
+export default function QuestionCard({ question, token, currentUser, onDelete }) {
   const [showComments, setShowComments] = useState(false);
 
   // likes / dislikes counts — initialized from the question prop
   const [likes, setLikes] = useState(question.likes);
   const [dislikes, setDislikes] = useState(question.dislikes);
   const [vote, setVote] = useState(question.userVote ?? null);
-  
-
+  const isOwner = currentUser && Number(question.userId) === Number(currentUser.id);
   const [comments, setComments] = useState(question.comments);
-
-  // Recalculate the sentiment bar every render based on live counts
   const total = likes + dislikes;
   const likePct = total ? Math.round((likes / total) * 100) : 50;
-
   const tagStyle = TAG_STYLES[question.tag] ?? { color: '#0e7490', bg: '#CFFAFE' };
 
 async function handleLike() {
@@ -107,7 +102,27 @@ async function handleLike() {
           {question.tag}
         </span>
       </div>
-
+      {isOwner && (
+      <button type="button" className={styles.deleteBtn} onClick={() => onDelete(question.id)}
+     aria-label="Delete question"
+     title="Delete question">
+     <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+     >
+      <polyline points="3 6 5 6 21 6" />
+      <path d="M19 6l-1 14H6L5 6" />
+      <path d="M10 11v6" />
+      <path d="M14 11v6" />
+      <path d="M9 6V4h6v2" />
+     </svg>
+     </button>
+     )}
       {/* Question text */}
       <p className={styles.questionText}>{question.text}</p>
 
