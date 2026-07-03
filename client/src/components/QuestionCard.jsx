@@ -16,7 +16,50 @@ function formatCount(n) {
   if (n >= 1000) return (n / 1000).toFixed(1) + 'k';
   return String(n);
 }
+function getCommentColor(name) {
+  const palette = [
+    '#6c63ff',
+    '#22c58b',
+    '#e05252',
+    '#d4537e',
+    '#f59e0b',
+    '#8b5cf6',
+    '#10b981',
+    '#06B6D4',
+  ];
 
+  let hash = 0;
+
+  for (let i = 0; i < name.length; i++) {
+    hash =
+      name.charCodeAt(i) +
+      ((hash << 5) - hash);
+  }
+
+  return palette[
+    Math.abs(hash) % palette.length
+  ];
+}
+
+function formatCommentTimeAgo(isoString) {
+  if (!isoString) return 'Just now';
+
+  const seconds = Math.floor(
+    (Date.now() - new Date(isoString)) / 1000
+  );
+
+  if (seconds < 60) return 'Just now';
+
+  if (seconds < 3600) {
+    return `${Math.floor(seconds / 60)}m ago`;
+  }
+
+  if (seconds < 86400) {
+    return `${Math.floor(seconds / 3600)}h ago`;
+  }
+
+  return `${Math.floor(seconds / 86400)}d ago`;
+}
 export default function QuestionCard({ question, token, currentUser, onDelete }) {
   const [showComments, setShowComments] = useState(false);
 
@@ -68,18 +111,61 @@ async function handleLike() {
    }
   }
 
-  function handleAddComment(text) {
-    const newComment = {
-      id: Date.now(),
-      name: 'You',
-      initials: 'YU',
-      avatarColor: '#06B6D4',
-      timeAgo: 'Just now',
-      text,
-    };
-    setComments([newComment, ...comments]);
+async function handleAddComment(text) {
+  if (!token) {
+    alert('Please sign in to comment.');
+    return;
   }
 
+  try {
+    const res = await fetch(
+      `http://localhost:5000/api/questions/${question.id}/comments`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ text }),
+      }
+    );
+
+    const json = await res.json();
+
+    if (!res.ok) {
+      throw new Error(
+        json.message || 'Failed to post comment.'
+      );
+    }
+
+    // Backend returns the full updated question.
+    // Convert its comments into the shape CommentSection expects.
+    const updatedComments = (json.data.comments ?? []).map((comment) => {
+      const name = comment.author ?? comment.name ?? 'Unknown';
+
+      return {
+        ...comment,
+        name,
+
+        initials: name
+          .split(' ')
+          .map((word) => word[0])
+          .join('')
+          .toUpperCase()
+          .slice(0, 2),
+
+        avatarColor: getCommentColor(name),
+
+        timeAgo: formatCommentTimeAgo(comment.createdAt),
+      };
+    });
+
+    setComments(updatedComments);
+  } catch (err) {
+    console.error(err);
+    alert(err.message);
+  }
+}
   return (
     <article className={styles.card}>
       {/* Meta row */}

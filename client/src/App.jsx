@@ -10,16 +10,50 @@ import ProfileView from './components/ProfileView';
 const API_BASE = 'http://localhost:5000/api';
 function normaliseQuestion(q) {
   return {
-    ...q,                               
-    tag:         q.category ?? 'General',
-    initials:    q.author               
-                   .split(' ')
-                   .map((w) => w[0])
-                   .join('')
-                   .toUpperCase()
-                   .slice(0, 2),
-    avatarColor: stringToColor(q.author), 
-    timeAgo:     formatTimeAgo(q.createdAt),
+    ...q,
+    tag: q.category ?? 'General',
+
+    initials: q.author
+      .split(' ')
+      .map((w) => w[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2),
+
+    avatarColor: stringToColor(q.author),
+    timeAgo: formatTimeAgo(q.createdAt),
+
+    comments: (q.comments ?? []).map(normaliseComment),
+  };
+}
+// function normaliseQuestion(q) {
+//   return {
+//     ...q,                               
+//     tag:         q.category ?? 'General',
+//     initials:    q.author               
+//                    .split(' ')
+//                    .map((w) => w[0])
+//                    .join('')
+//                    .toUpperCase()
+//                    .slice(0, 2),
+//     avatarColor: stringToColor(q.author), 
+//     timeAgo:     formatTimeAgo(q.createdAt),
+//   };
+// }
+function normaliseComment(comment) {
+  const name = comment.author ?? comment.name ?? 'Unknown';
+
+  return {
+    ...comment,
+    name,
+    initials: name
+      .split(' ')
+      .map((word) => word[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2),
+    avatarColor: stringToColor(name),
+    timeAgo: formatTimeAgo(comment.createdAt),
   };
 }
 function stringToColor(str) {
