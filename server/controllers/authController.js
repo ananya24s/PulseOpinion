@@ -1,9 +1,12 @@
-//Auth Controller
 const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
+
 const {
   findUserByEmail,
   createUser,
 } = require("../models/userModel");
+
+// ======================= REGISTER =======================
 
 async function register(req, res) {
   try {
@@ -30,7 +33,7 @@ async function register(req, res) {
     // Hash password
     const passwordHash = await bcrypt.hash(password, 10);
 
-    // Save user
+    // Create user
     const user = await createUser({
       name,
       email,
@@ -51,6 +54,8 @@ async function register(req, res) {
     });
   }
 }
+
+// ======================= LOGIN =======================
 
 async function login(req, res) {
   try {
@@ -87,8 +92,21 @@ async function login(req, res) {
       });
     }
 
+    // Generate JWT
+    const token = jwt.sign(
+      {
+        id: user.id,
+        email: user.email,
+      },
+      process.env.JWT_SECRET,
+      {
+        expiresIn: "7d",
+      }
+    );
+
     return res.status(200).json({
       success: true,
+      token,
       data: {
         id: user.id,
         name: user.name,
@@ -105,7 +123,66 @@ async function login(req, res) {
     });
   }
 }
+
 module.exports = {
   register,
   login,
 };
+// //Auth Controller
+
+// const bcrypt = require("bcrypt");
+// const {
+//   findUserByEmail,
+//   createUser,
+// } = require("../models/userModel");
+
+// async function register(req, res) {
+//   try {
+//     const { name, email, password } = req.body;
+
+//     // Basic validation
+//     if (!name || !email || !password) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "All fields are required.",
+//       });
+//     }
+
+//     // Check if email already exists
+//     const existingUser = await findUserByEmail(email);
+
+//     if (existingUser) {
+//       return res.status(409).json({
+//         success: false,
+//         message: "Email already registered.",
+//       });
+//     }
+
+//     // Hash password
+//     const passwordHash = await bcrypt.hash(password, 10);
+
+//     // Save user
+//     const user = await createUser({
+//       name,
+//       email,
+//       passwordHash,
+//     });
+
+//     return res.status(201).json({
+//       success: true,
+//       data: user,
+//     });
+
+//   } catch (err) {
+//     console.error(err);
+
+//     return res.status(500).json({
+//       success: false,
+//       message: "Failed to register user.",
+//     });
+//   }
+// }
+
+// module.exports = {
+//   register,
+// };

@@ -2,15 +2,12 @@ const questionModel = require('../models/questionModel');
 
 async function getQuestions(req, res) {
   try {
-    const questions = await questionModel.getAllQuestions();
+    const questions = await questionModel.getAllQuestions(req.user?.id);
     res.status(200).json({ success: true, data: questions });
   } catch(err){
    console.error(err);
    res.status(500).json({success: false,message: "Failed to fetch questions." });
   }
-    //catch (err) {
-    //res.status(500).json({ success: false, message: 'Failed to fetch questions.' });
-  //}
 }
 async function createQuestion(req, res) {
   try {
@@ -37,26 +34,21 @@ async function createQuestion(req, res) {
       });
     }
 
-    const question = await questionModel.createQuestion({ text, category });
-    // 201 Created — the standard status for a successfully created resource
+    const question = await questionModel.createQuestion({text,category,userId: req.user.id,});
     res.status(201).json({ success: true, data: question });
   } catch (err) {
     res.status(500).json({ success: false, message: 'Failed to create question.' });
   }
 }
-
-// ── PATCH /api/questions/:id/like ─────────────────────────────────────────────
-// Increments the like count by 1.
 async function likeQuestion(req, res) {
   try {
-    // req.params.id comes in as a string — convert to number for array lookup
     const id = Number(req.params.id);
 
     if (isNaN(id)) {
       return res.status(400).json({ success: false, message: 'Invalid question ID.' });
     }
 
-    const question = await questionModel.likeQuestion(id);
+    const question = await questionModel.likeQuestion(id, req.user.id);
 
     if (!question) {
       return res.status(404).json({ success: false, message: 'Question not found.' });
@@ -76,7 +68,7 @@ async function dislikeQuestion(req, res) {
       return res.status(400).json({ success: false, message: 'Invalid question ID.' });
     }
 
-    const question = await questionModel.dislikeQuestion(id);
+    const question = await questionModel.dislikeQuestion(id, req.user.id);
 
     if (!question) {
       return res.status(404).json({ success: false, message: 'Question not found.' });
@@ -87,10 +79,6 @@ async function dislikeQuestion(req, res) {
     res.status(500).json({ success: false, message: 'Failed to dislike question.' });
   }
 }
-
-// ── POST /api/questions/:id/comments ──────────────────────────────────────────
-// Appends a comment to a question.
-// Body: { text: string }
 async function addComment(req, res) {
   try {
     const id = Number(req.params.id);
@@ -101,15 +89,14 @@ async function addComment(req, res) {
 
     const { text } = req.body;
 
-    // Validation — comment text is required
     if (!text || !text.trim()) {
       return res.status(400).json({
         success: false,
         message: 'Comment text is required.',
       });
     }
-
-    const question = await questionModel.addComment(id, { text });
+    const question = await questionModel.addComment(id, {text,userId: req.user.id,});
+    
 
     if (!question) {
       return res.status(404).json({ success: false, message: 'Question not found.' });

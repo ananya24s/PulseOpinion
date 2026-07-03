@@ -35,12 +35,7 @@ async function fetchQuestionWithComments(id) {
   question.comments = commentRows;
   return question;
 }
-
-// ── READ ─────────────────────────────────────────────────────────────────────
-
-// Returns all questions newest-first, each with its full comments array.
-async function getAllQuestions() {
-  // Fetch all questions ordered by newest first
+async function getAllQuestions(userId) {
   const [questionRows] = await pool.execute(
     `SELECT
        id,
@@ -87,59 +82,155 @@ async function getAllQuestions() {
       createdAt: comment.createdAt,
     });
   }
+  let votesByQuestion = new Map();
 
-  // Attach the pre-grouped comments to each question
+  if (userId) {
+   const [voteRows] = await pool.execute(
+    `SELECT question_id, vote_type
+     FROM votes
+     WHERE user_id = ?`,
+    [userId]
+   );
+
+   votesByQuestion = new Map(
+    voteRows.map((v) => [v.question_id, v.vote_type])
+  );
+ }
   return questionRows.map((q) => ({
-    ...q,
-    comments: commentsByQuestion.get(q.id) ?? [],
+  ...q,
+  userVote: votesByQuestion.get(q.id) ?? null,
+  comments: commentsByQuestion.get(q.id) ?? [],
   }));
 }
 
-async function createQuestion({ text, category }) {
-  const [result] = await pool.execute(
-    `INSERT INTO questions (author, question_text, category)
-     VALUES (?, ?, ?)`,
-    ['You', text.trim(), category ?? 'General']
+async function createQuestion({ text, category, userId }) {
+  const [userRows] = await pool.execute(
+    `SELECT name FROM users WHERE id = ?`,
+    [userId]
   );
 
-  // result.insertId is the AUTO_INCREMENT id MySQL assigned to the new row
+  if (userRows.length === 0) {
+    throw new Error("User not found");
+  }
+
+  const author = userRows[0].name;
+
+  const [result] = await pool.execute(
+    `INSERT INTO questions (author, user_id, question_text, category)
+     VALUES (?, ?, ?, ?)`,
+    [author, userId, text.trim(), category ?? "General"]
+  );
+
   return fetchQuestionWithComments(result.insertId);
 }
 
 // ── VOTE ──────────────────────────────────────────────────────────────────────
 
 // Atomically increments likes by 1 using SQL arithmetic — no read-then-write race.
-async function likeQuestion(id) {
-  const [result] = await pool.execute(
-    `UPDATE questions SET likes = likes + 1 WHERE id = ?`,
-    [id]
-  );
+async function handleVote(questionId, userId, voteType) {
+  const connection = await pool.getConnection();
 
-  // affectedRows = 0 means no row matched that id
-  if (result.affectedRows === 0) return null;
+  try {
+    await connection.beginTransaction();
 
-  return fetchQuestionWithComments(id);
+    const [questions] = await connection.execute(
+      `SELECT id FROM questions WHERE id = ? FOR UPDATE`,
+      [questionId]
+    );
+
+    if (questions.length === 0) {
+      await connection.rollback();
+      return null;
+    }
+
+    const [votes] = await connection.execute(
+      `SELECT vote_type FROM votes
+       WHERE user_id = ? AND question_id = ?`,
+      [userId, questionId]
+    );
+
+    const existingVote = votes[0]?.vote_type;
+
+    // No previous vote → add vote
+    if (!existingVote) {
+      await connection.execute(
+        `INSERT INTO votes (user_id, question_id, vote_type)
+         VALUES (?, ?, ?)`,
+        [userId, questionId, voteType]
+      );
+
+      const column = voteType === "like" ? "likes" : "dislikes";
+
+      await connection.query(
+        `UPDATE questions SET ${column} = ${column} + 1 WHERE id = ?`,
+        [questionId]
+      );
+    }
+
+    // Same vote clicked again → undo
+    else if (existingVote === voteType) {
+      await connection.execute(
+        `DELETE FROM votes
+         WHERE user_id = ? AND question_id = ?`,
+        [userId, questionId]
+      );
+
+      const column = voteType === "like" ? "likes" : "dislikes";
+
+      await connection.query(
+        `UPDATE questions
+         SET ${column} = GREATEST(${column} - 1, 0)
+         WHERE id = ?`,
+        [questionId]
+      );
+    }
+    else {
+      await connection.execute(
+        `UPDATE votes
+         SET vote_type = ?
+         WHERE user_id = ? AND question_id = ?`,
+        [voteType, userId, questionId]
+      );
+
+      if (voteType === "like") {
+        await connection.execute(
+          `UPDATE questions
+           SET likes = likes + 1,
+               dislikes = GREATEST(dislikes - 1, 0)
+           WHERE id = ?`,
+          [questionId]
+        );
+      } else {
+        await connection.execute(
+          `UPDATE questions
+           SET dislikes = dislikes + 1,
+               likes = GREATEST(likes - 1, 0)
+           WHERE id = ?`,
+          [questionId]
+        );
+      }
+    }
+
+    await connection.commit();
+    return fetchQuestionWithComments(questionId);
+
+  } catch (err) {
+    await connection.rollback();
+    throw err;
+  } finally {
+    connection.release();
+  }
 }
 
-// Atomically increments dislikes by 1.
-async function dislikeQuestion(id) {
-  const [result] = await pool.execute(
-    `UPDATE questions SET dislikes = dislikes + 1 WHERE id = ?`,
-    [id]
-  );
-
-  if (result.affectedRows === 0) return null;
-
-  return fetchQuestionWithComments(id);
+async function likeQuestion(id, userId) {
+  return handleVote(id, userId, "like");
 }
 
-// ── COMMENTS ──────────────────────────────────────────────────────────────────
+async function dislikeQuestion(id, userId) {
+  return handleVote(id, userId, "dislike");
+}
 
-// Inserts a comment then returns the parent question with all comments.
-async function addComment(questionId, { text }) {
-  // Verify the parent question exists before inserting — if it doesn't,
-  // the FK constraint would throw anyway, but we check explicitly so we
-  // can return null (→ 404) rather than a raw DB error.
+async function addComment(questionId, { text, userId }) {
   const [check] = await pool.execute(
     `SELECT id FROM questions WHERE id = ?`,
     [questionId]
@@ -147,13 +238,23 @@ async function addComment(questionId, { text }) {
 
   if (check.length === 0) return null;
 
-  await pool.execute(
-    `INSERT INTO comments (question_id, author, comment_text)
-     VALUES (?, ?, ?)`,
-    [questionId, 'You', text.trim()]
+  const [userRows] = await pool.execute(
+    `SELECT name FROM users WHERE id = ?`,
+    [userId]
   );
 
-  // Return the full question so the controller response shape stays the same
+  if (userRows.length === 0) {
+    throw new Error("User not found");
+  }
+
+  const author = userRows[0].name;
+
+  await pool.execute(
+    `INSERT INTO comments (question_id, author, user_id, comment_text)
+     VALUES (?, ?, ?, ?)`,
+    [questionId, author, userId, text.trim()]
+  );
+
   return fetchQuestionWithComments(questionId);
 }
 
@@ -165,121 +266,3 @@ module.exports = {
   dislikeQuestion,
   addComment,
 };
-
-
-//old in-memory model for refernce and to show changes.
-// let questions = [
-//   {
-//     id: 1,
-//     text: 'Will Artificial Intelligence replace software engineers entirely within the next decade?',
-//     author: 'Sneha P.',
-//     category: 'Technology',
-//     likes: 892,
-//     dislikes: 654,
-//     comments: [
-//       { id: 1, text: 'Replace entirely? No. But it will radically change what engineers spend time on.', createdAt: new Date('2025-01-10T09:00:00Z') },
-//     ],
-//     createdAt: new Date('2025-01-10T08:00:00Z'),
-//   },
-//   {
-//     id: 2,
-//     text: 'Should coding be made a compulsory subject from Class 6 onwards in all Indian schools?',
-//     author: 'Nisha R.',
-//     category: 'Education',
-//     likes: 1560,
-//     dislikes: 220,
-//     comments: [],
-//     createdAt: new Date('2025-01-09T14:00:00Z'),
-//   },
-//   {
-//     id: 3,
-//     text: 'Are OTT platforms like Netflix and Prime killing the magic of Bollywood cinema?',
-//     author: 'Karan B.',
-//     category: 'Entertainment',
-//     likes: 980,
-//     dislikes: 340,
-//     comments: [],
-//     createdAt: new Date('2025-01-08T11:00:00Z'),
-//   },
-// ];
-
-// // Auto-incrementing ID counter — starts after the seed data
-// let nextId = 4;
-
-// // ── READ ─────────────────────────────────────────────────────────────────────
-
-// // Returns all questions, newest first
-// async function getAllQuestions() {
-//   return [...questions].sort((a, b) => b.createdAt - a.createdAt);
-// }
-
-// // Returns a single question by id, or null if not found
-// async function getQuestionById(id) {
-//   return questions.find((q) => q.id === id) ?? null;
-// }
-
-// // ── CREATE ────────────────────────────────────────────────────────────────────
-
-// // Creates a new question from the provided text and category
-// async function createQuestion({ text, category }) {
-//   const question = {
-//     id:        nextId++,
-//     text:      text.trim(),
-//     author:    'You',
-//     category:  category ?? 'General',
-//     likes:     0,
-//     dislikes:  0,
-//     comments:  [],
-//     createdAt: new Date(),
-//   };
-
-//   questions.push(question);
-//   return question;
-// }
-
-// // ── VOTE ──────────────────────────────────────────────────────────────────────
-
-// // Increments likes on a question; returns the updated question or null
-// async function likeQuestion(id) {
-//   const question = questions.find((q) => q.id === id);
-//   if (!question) return null;
-
-//   question.likes += 1;
-//   return question;
-// }
-
-// // Increments dislikes on a question; returns the updated question or null
-// async function dislikeQuestion(id) {
-//   const question = questions.find((q) => q.id === id);
-//   if (!question) return null;
-
-//   question.dislikes += 1;
-//   return question;
-// }
-
-// // ── COMMENTS ──────────────────────────────────────────────────────────────────
-
-// // Appends a comment to a question; returns the updated question or null
-// async function addComment(questionId, { text }) {
-//   const question = questions.find((q) => q.id === questionId);
-//   if (!question) return null;
-
-//   const comment = {
-//     id:        question.comments.length + 1,
-//     text:      text.trim(),
-//     author:    'You',
-//     createdAt: new Date(),
-//   };
-
-//   question.comments.push(comment);
-//   return question;
-// }
-
-// module.exports = {
-//   getAllQuestions,
-//   getQuestionById,
-//   createQuestion,
-//   likeQuestion,
-//   dislikeQuestion,
-//   addComment,
-// };

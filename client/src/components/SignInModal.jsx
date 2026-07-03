@@ -1,8 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import styles from './SignInModal.module.css';
-
-// ─── Small reusable input component ──────────────────────────────────────────
-// Keeps the label + input + error message together as one unit.
 function FormField({ id, label, type, value, onChange, error, autoComplete, children }) {
   return (
     <div className={styles.field}>
@@ -32,14 +29,8 @@ function FormField({ id, label, type, value, onChange, error, autoComplete, chil
     </div>
   );
 }
-
-// ─── Main modal component ─────────────────────────────────────────────────────
-// Props:
-//   isOpen   — boolean, controls visibility
-//   onClose  — function called to close the modal
-//   triggerRef — ref to the "Sign in" button so we can restore focus on close
-export default function SignInModal({ isOpen, onClose, triggerRef }) {
-  // Form field values
+export default function SignInModal({ isOpen, onClose, triggerRef, onLogin }) {
+// export default function SignInModal({ isOpen, onClose, triggerRef }) {
   const [email, setEmail]       = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
@@ -135,27 +126,40 @@ export default function SignInModal({ isOpen, onClose, triggerRef }) {
     return '';
   }
 
-  // The primary Sign In button is disabled until both fields have content
-  // (full validation only fires on submit — this is just the "enable" gate)
   const canSubmit = email.trim().length > 0 && password.length > 0;
 
-  // ── Form submit ──────────────────────────────────────────────────────────
-  function handleSubmit(e) {
-    e.preventDefault(); // prevent page reload
+  async function handleSubmit(e) {
+   e.preventDefault();
 
-    const eErr = validateEmail(email);
-    const pErr = validatePassword(password);
+   const eErr = validateEmail(email);
+   const pErr = validatePassword(password);
 
-    setEmailError(eErr);
-    setPasswordError(pErr);
+   setEmailError(eErr);
+   setPasswordError(pErr);
 
-    // If there are any errors, stop here
-    if (eErr || pErr) return;
+   if (eErr || pErr) return;
 
-    // No backend yet — just log and close
-    console.log('Sign in submitted:', { email, rememberMe });
-    handleClose();
+   try {
+    const res = await fetch('http://localhost:5000/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
+
+    const json = await res.json();
+
+    if (!res.ok) {
+      setPasswordError(json.message || 'Sign in failed.');
+      return;
+     }
+
+     onLogin(json.data, json.token, rememberMe);
+     handleClose();
+
+   } catch {
+    setPasswordError('Could not connect to server.');
   }
+}
 
   // ── Reset form when the modal closes ────────────────────────────────────
   // This means reopening it gives you a fresh form

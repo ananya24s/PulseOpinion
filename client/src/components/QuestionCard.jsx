@@ -18,18 +18,14 @@ function formatCount(n) {
   return String(n);
 }
 
-export default function QuestionCard({ question }) {
+export default function QuestionCard({ question, token }) {
   const [showComments, setShowComments] = useState(false);
 
   // likes / dislikes counts — initialized from the question prop
   const [likes, setLikes] = useState(question.likes);
   const [dislikes, setDislikes] = useState(question.dislikes);
-
-  // `vote` tracks what THIS user has voted:
-  //   null     = no vote yet
-  //  'like'    = user liked this question
-  //  'dislike' = user disliked this question
-  const [vote, setVote] = useState(null);
+  const [vote, setVote] = useState(question.userVote ?? null);
+  
 
   const [comments, setComments] = useState(question.comments);
 
@@ -39,39 +35,42 @@ export default function QuestionCard({ question }) {
 
   const tagStyle = TAG_STYLES[question.tag] ?? { color: '#0e7490', bg: '#CFFAFE' };
 
-  // --- LIKE BUTTON LOGIC ---
-  // Three cases:
-  // 1. User hasn't voted → cast a like (+1 like)
-  // 2. User already liked → undo the like (-1 like), back to no vote
-  // 3. User disliked → switch: remove dislike (-1), add like (+1)
-  function handleLike() {
-    if (vote === null) {
-      setLikes(likes + 1);
-      setVote('like');
-    } else if (vote === 'like') {
-      setLikes(likes - 1);
-      setVote(null);
-    } else if (vote === 'dislike') {
-      setDislikes(dislikes - 1);
-      setLikes(likes + 1);
-      setVote('like');
-    }
+async function handleLike() {
+  try {
+    const res = await fetch(
+      `http://localhost:5000/api/questions/${question.id}/like`,
+      { method: 'PATCH',headers: {  Authorization: `Bearer ${token}`,}, }
+   );
+
+    if (!res.ok) throw new Error('Failed to like');
+
+    const json = await res.json();
+    setLikes(json.data.likes);
+    setDislikes(json.data.dislikes);
+    setVote((current) => current === 'like' ? null : 'like');
+   } catch (err) {
+    console.error(err);
+   }
   }
 
   // --- DISLIKE BUTTON LOGIC ---
   // Mirror of like logic, but for dislikes
-  function handleDislike() {
-    if (vote === null) {
-      setDislikes(dislikes + 1);
-      setVote('dislike');
-    } else if (vote === 'dislike') {
-      setDislikes(dislikes - 1);
-      setVote(null);
-    } else if (vote === 'like') {
-      setLikes(likes - 1);
-      setDislikes(dislikes + 1);
-      setVote('dislike');
-    }
+  async function handleDislike() {
+  try {
+    const res = await fetch(
+      `http://localhost:5000/api/questions/${question.id}/dislike`,
+      { method: 'PATCH',headers: {  Authorization: `Bearer ${token}`,}, }
+    );
+
+    if (!res.ok) throw new Error('Failed to dislike');
+
+    const json = await res.json();
+    setLikes(json.data.likes);
+    setDislikes(json.data.dislikes);
+    setVote((current) => current === 'dislike' ? null : 'dislike');
+   } catch (err) {
+    console.error(err);
+   }
   }
 
   function handleAddComment(text) {
@@ -188,157 +187,3 @@ export default function QuestionCard({ question }) {
     </article>
   );
 }
-
-//old code
-// import { useState } from 'react';  // useState manages local state inside this component
-// import CommentSection from './CommentSection';
-// import styles from './QuestionCard.module.css';
-
-// const TAG_STYLES = {
-//   Politics:   { color: '#1E3A8A', bg: '#DBEAFE' },
-//   Technology: { color: '#0f6e56', bg: '#e1f5ee' },
-//   Economy:    { color: '#854f0b', bg: '#faeeda' },
-//   Society:    { color: '#993556', bg: '#fbeaf0' },
-//   General:    { color: '#0e7490', bg: '#CFFAFE' },
-// };
-
-// function formatCount(n) {
-//   if (n >= 1000) return (n / 1000).toFixed(1) + 'k';
-//   return String(n);
-// }
-
-// export default function QuestionCard({ question }) {
-//   // showComments: controls whether the comment panel is open
-//   const [showComments, setShowComments] = useState(false);
-
-//   // likes / dislikes: start from the question's initial data, then update on click
-//   const [likes, setLikes] = useState(question.likes);
-//   const [dislikes, setDislikes] = useState(question.dislikes);
-
-//   // comments: local array of comment objects for this card
-//   // We use question.comments as the starting value
-//   const [comments, setComments] = useState(question.comments);
-
-//   // Compute the like percentage for the vote bar.
-//   // If nobody has voted yet (total = 0), default to 50% so the bar looks balanced.
-//   const total = likes + dislikes;
-//   const likePct = total ? Math.round((likes / total) * 100) : 50;
-
-//   const tagStyle = TAG_STYLES[question.tag] ?? { color: '#0e7490', bg: '#CFFAFE' };
-
-//   // Called by CommentSection when the user posts a new comment.
-//   // We receive the comment text, build a new comment object, and prepend it.
-//   function handleAddComment(text) {
-//     const newComment = {
-//       id: Date.now(),       // unique ID using current timestamp
-//       name: 'You',
-//       initials: 'YU',
-//       avatarColor: '#06B6D4',
-//       timeAgo: 'Just now',
-//       text: text,
-//     };
-
-//     // Spread the new comment at the top, keep existing ones below
-//     setComments([newComment, ...comments]);
-//   }
-
-//   return (
-//     <article className={styles.card}>
-//       {/* Meta row */}
-//       <div className={styles.meta}>
-//         <div
-//           className={styles.avatar}
-//           style={{ background: question.avatarColor }}
-//           aria-label={`Avatar for ${question.author}`}
-//         >
-//           {question.initials}
-//         </div>
-//         <div className={styles.authorInfo}>
-//           <span className={styles.author}>{question.author}</span>
-//           <span className={styles.time}>{question.timeAgo}</span>
-//         </div>
-//         <span
-//           className={styles.tag}
-//           style={{ color: tagStyle.color, background: tagStyle.bg }}
-//         >
-//           {question.tag}
-//         </span>
-//       </div>
-
-//       {/* Question text */}
-//       <p className={styles.questionText}>{question.text}</p>
-
-//       {/* Vote sentiment bar — width is driven by the live likePct value */}
-//       <div className={styles.voteBarWrap} aria-hidden="true">
-//         <div
-//           className={styles.voteBarFill}
-//           style={{ '--like-pct': `${likePct}%` }}
-//         />
-//       </div>
-
-//       {/* Action buttons */}
-//       <div className={styles.actions}>
-//         {/* Like button — clicking increments the likes count */}
-//         <button
-//           className={`${styles.actionBtn} ${styles.like}`}
-//           aria-label="Like"
-//           onClick={() => setLikes(likes + 1)}
-//         >
-//           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
-//             strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-//             <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3H14z"/>
-//             <path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/>
-//           </svg>
-//           {formatCount(likes)}
-//         </button>
-
-//         {/* Dislike button — clicking increments the dislikes count */}
-//         <button
-//           className={`${styles.actionBtn} ${styles.dislike}`}
-//           aria-label="Dislike"
-//           onClick={() => setDislikes(dislikes + 1)}
-//         >
-//           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
-//             strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-//             <path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3H10z"/>
-//             <path d="M17 2h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"/>
-//           </svg>
-//           {formatCount(dislikes)}
-//         </button>
-
-//         <div className={styles.divider} aria-hidden="true" />
-
-//         {/* Comment toggle — shows live comment count from the local `comments` array */}
-//         <button
-//           className={`${styles.actionBtn} ${styles.comment}`}
-//           onClick={() => setShowComments((v) => !v)}
-//           aria-expanded={showComments}
-//           aria-label="Toggle comments"
-//         >
-//           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
-//             strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-//             <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-//           </svg>
-//           {/* comments.length always reflects the real current count */}
-//           {formatCount(comments.length)} comments
-//           <svg
-//             className={`${styles.chevron} ${showComments ? styles.chevronOpen : ''}`}
-//             viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
-//             strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"
-//           >
-//             <polyline points="6 9 12 15 18 9"/>
-//           </svg>
-//         </button>
-//       </div>
-
-//       {/* Comments panel — only rendered when showComments is true.
-//           We pass the comments array and the add-comment handler down. */}
-//       {showComments && (
-//         <CommentSection
-//           comments={comments}
-//           onAddComment={handleAddComment}
-//         />
-//       )}
-//     </article>
-//   );
-// }
