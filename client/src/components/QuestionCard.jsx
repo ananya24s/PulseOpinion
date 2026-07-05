@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import CommentSection from './CommentSection';
 import styles from './QuestionCard.module.css';
+const API_BASE = import.meta.env.VITE_API_BASE_URL;
 const TAG_STYLES = {
   Politics:      { color: '#1E3A8A', bg: '#DBEAFE' },
   Technology:    { color: '#0f6e56', bg: '#e1f5ee' },
@@ -76,7 +77,8 @@ export default function QuestionCard({ question, token, currentUser, onDelete })
 async function handleLike() {
   try {
     const res = await fetch(
-      `http://localhost:5000/api/questions/${question.id}/like`,
+      `${API_BASE}/questions/${question.id}/like`,
+      // `http://localhost:5000/api/questions/${question.id}/like`,
       { method: 'PATCH',headers: {  Authorization: `Bearer ${token}`,}, }
    );
 
@@ -96,7 +98,8 @@ async function handleLike() {
   async function handleDislike() {
   try {
     const res = await fetch(
-      `http://localhost:5000/api/questions/${question.id}/dislike`,
+      `${API_BASE}/questions/${question.id}/dislike`,
+      // `http://localhost:5000/api/questions/${question.id}/dislike`,
       { method: 'PATCH',headers: {  Authorization: `Bearer ${token}`,}, }
     );
 
@@ -119,7 +122,8 @@ async function handleAddComment(text) {
 
   try {
     const res = await fetch(
-      `http://localhost:5000/api/questions/${question.id}/comments`,
+      `${API_BASE}/questions/${question.id}/comments`,
+      // `http://localhost:5000/api/questions/${question.id}/comments`,
       {
         method: 'POST',
         headers: {

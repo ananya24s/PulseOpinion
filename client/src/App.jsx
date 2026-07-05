@@ -7,7 +7,8 @@ import QuestionForm from './components/QuestionForm';
 import QuestionCard from './components/QuestionCard';
 import styles from './App.module.css';
 import ProfileView from './components/ProfileView'; 
-const API_BASE = 'http://localhost:5000/api';
+const API_BASE = import.meta.env.VITE_API_BASE_URL;
+// const API_BASE = 'http://localhost:5000/api';
 function normaliseQuestion(q) {
   return {
     ...q,
