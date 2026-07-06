@@ -7,6 +7,7 @@ import QuestionForm from './components/QuestionForm';
 import QuestionCard from './components/QuestionCard';
 import styles from './App.module.css';
 import ProfileView from './components/ProfileView'; 
+import AdminDashboard from './components/admin/AdminDashboard';
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 // const API_BASE = 'http://localhost:5000/api';
 function normaliseQuestion(q) {
@@ -27,20 +28,7 @@ function normaliseQuestion(q) {
     comments: (q.comments ?? []).map(normaliseComment),
   };
 }
-// function normaliseQuestion(q) {
-//   return {
-//     ...q,                               
-//     tag:         q.category ?? 'General',
-//     initials:    q.author               
-//                    .split(' ')
-//                    .map((w) => w[0])
-//                    .join('')
-//                    .toUpperCase()
-//                    .slice(0, 2),
-//     avatarColor: stringToColor(q.author), 
-//     timeAgo:     formatTimeAgo(q.createdAt),
-//   };
-// }
+
 function normaliseComment(comment) {
   const name = comment.author ?? comment.name ?? 'Unknown';
 
@@ -76,7 +64,6 @@ function formatTimeAgo(isoString) {
   return `${Math.floor(seconds / 86400)}d ago`;
 }
 export default function App() {
-  
   const [questions, setQuestions]   = useState([]);
   const [showSignIn, setShowSignIn] = useState(false);
   const [loading, setLoading]       = useState(true);
@@ -129,7 +116,7 @@ export default function App() {
     sessionStorage.setItem('pulseUser', JSON.stringify(userData));
     sessionStorage.setItem('pulseToken', authToken);
   }
-}
+ } 
   async function handleAddQuestion(text, category) {
     try {
       const res = await fetch(`${API_BASE}/questions`, {
@@ -188,7 +175,6 @@ export default function App() {
       q.author.toLowerCase().includes(query) ||
       q.tag.toLowerCase().includes(query));
     }
-
     return [...filtered].sort((a, b) => {
       if (sortBy === 'mostLiked')     return b.likes - a.likes;
       if (sortBy === 'mostCommented') return b.comments.length - a.comments.length;
@@ -222,12 +208,18 @@ export default function App() {
      onMyQuestionsClick={() => {
      setView('mine');
      setSearchQuery('');
-     }}/>
-     
+     }}
+     onAdminClick={() => setView('admin')}/>
+     {/* <button onClick={() => setView('admin')}>
+     Open Admin</button> */}
     <SignInModal isOpen={showSignIn}onClose={() => setShowSignIn(false)}onLogin={handleLogin}/>
-      <main className={styles.container}>
-      {view === 'profile' ? (
-     <ProfileView
+      <main className={view === 'admin' ? '' : styles.container}>
+      {view === 'admin' ? (
+        <AdminDashboard token={token}
+         onBack={() => setView('all')}/>
+      // <AdminDashboard token={token} />
+       ) : view === 'profile' ? (
+       <ProfileView
       user={user}
       questions={questions}
       onBack={() => setView('all')}/>

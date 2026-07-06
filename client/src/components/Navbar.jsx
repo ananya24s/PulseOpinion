@@ -9,6 +9,7 @@ export default function Navbar({
   onCategoriesClick,
   onAboutClick,
   onProfileClick,
+  onAdminClick,
   onMyQuestionsClick,
 }) {
   const [showMenu, setShowMenu] = useState(false);
@@ -79,16 +80,20 @@ export default function Navbar({
                 </button>
 
                 <button
-                  onClick={() => handleMenuAction(onMyQuestionsClick)}
-                >
-                  My Questions
-                </button>
+                 onClick={() => handleMenuAction(onMyQuestionsClick)}>
+                 My Questions
+                 </button>
 
-                <button
-                  onClick={() => handleMenuAction(onLogout)}
-                >
-                  Logout
-                </button>
+                 {user?.role === "admin" && (
+                 <button
+                 onClick={() => handleMenuAction(onAdminClick)}>
+                 Admin Dashboard
+                 </button>
+                  )}
+                 <button
+                  onClick={() => handleMenuAction(onLogout)}>
+                 Logout
+                 </button>
               </div>
             )}
           </div>

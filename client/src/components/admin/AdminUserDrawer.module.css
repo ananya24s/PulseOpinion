@@ -1,0 +1,226 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.32);
+  display: flex;
+  justify-content: flex-end;
+  z-index: 100;
+  animation: fadeIn 0.15s ease;
+}
+
+.drawer {
+  --admin-navy: #0f172a;
+  --admin-accent: #06b6d4;
+  --admin-card: #ffffff;
+  --admin-text: #0f172a;
+  --admin-text-secondary: #64748b;
+  --admin-text-muted: #94a3b8;
+  --admin-border: #e2e8f0;
+
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  width: min(380px, 100%);
+  height: 100%;
+  background: var(--admin-card);
+  border-left: 1px solid var(--admin-border);
+  box-shadow: -8px 0 24px rgba(15, 23, 42, 0.08);
+  padding: 24px;
+  overflow-y: auto;
+  position: relative;
+  animation: slideIn 0.2s ease;
+  box-sizing: border-box;
+  color: var(--admin-text);
+}
+
+.drawer * {
+  box-sizing: border-box;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideIn {
+  from { transform: translateX(16px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .overlay,
+  .drawer {
+    animation: none;
+  }
+}
+
+.closeButton {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  border: 1px solid var(--admin-border);
+  background: transparent;
+  color: var(--admin-text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.closeButton svg {
+  width: 14px;
+  height: 14px;
+}
+
+.closeButton:hover {
+  border-color: var(--admin-accent);
+  color: var(--admin-accent);
+}
+
+.closeButton:focus-visible {
+  outline: 2px solid var(--admin-accent);
+  outline-offset: 2px;
+}
+
+.identity {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 8px;
+  margin-bottom: 20px;
+  padding-right: 30px;
+}
+
+.avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 650;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.name {
+  font-size: 16px;
+  font-weight: 640;
+  line-height: 1.3;
+}
+
+.email {
+  font-size: 12.5px;
+  color: var(--admin-text-muted);
+  margin-bottom: 6px;
+}
+
+.roleBadge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: rgba(100, 116, 139, 0.12);
+  color: var(--admin-text-secondary);
+}
+
+.roleBadgeAdmin {
+  background: rgba(6, 182, 212, 0.12);
+  color: #0e7a90;
+}
+
+.metaRow {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  padding: 12px 0;
+  border-top: 1px solid var(--admin-border);
+  border-bottom: 1px solid var(--admin-border);
+  margin-bottom: 20px;
+}
+
+.metaLabel {
+  color: var(--admin-text-secondary);
+}
+
+.metaValue {
+  font-weight: 560;
+}
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+.statCard {
+  border: 1px solid var(--admin-border);
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+
+.statCardEmphasis {
+  grid-column: 1 / -1;
+  background: rgba(6, 182, 212, 0.06);
+  border-color: rgba(6, 182, 212, 0.3);
+}
+
+.statValue {
+  font-size: 18px;
+  font-weight: 650;
+  color: var(--admin-navy);
+  line-height: 1.2;
+}
+
+.statLabel {
+  font-size: 11.5px;
+  color: var(--admin-text-secondary);
+  margin-top: 2px;
+}
+
+.activityHeading {
+  font-size: 13px;
+  font-weight: 620;
+  margin: 0 0 10px;
+  color: var(--admin-navy);
+}
+
+.activityList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.activityItem {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 12.5px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--admin-border);
+}
+
+.activityItem:last-child {
+  border-bottom: none;
+}
+
+.activityText {
+  color: var(--admin-text);
+  line-height: 1.4;
+}
+
+.activityTime {
+  color: var(--admin-text-muted);
+  font-size: 11.5px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.activityEmpty {
+  font-size: 12.5px;
+  color: var(--admin-text-muted);
+}
