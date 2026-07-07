@@ -1,4 +1,5 @@
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap");
+
 *,
 *::before,
 *::after {
@@ -7,6 +8,196 @@
   padding: 0;
 }
 
+/* =========================================
+   LIGHT THEME
+========================================= */
+
+:root {
+  --primary: #3858af;
+  --primary-hover: #1d4ed8;
+
+  --accent: #06b6d4;
+  --accent-hover: #0891b2;
+  --accent-light: #cffafe;
+
+  --indigo: var(--primary);
+  --violet: var(--accent);
+  --violet-hover: var(--accent-hover);
+  --violet-light: var(--accent-light);
+
+  --bg-page: #f6f8fc;
+  --bg-surface: #ffffff;
+  --bg-soft: #eef2f8;
+  --bg-hover: #edf2fb;
+
+  --bg: #fcfcfc;
+  --card: #ffffff;
+  --card-inner: #f8fafc;
+
+  --border-color: #dfe6f0;
+  --border-soft: #e4e9f2;
+  --border: #e2e8f0;
+
+  --text-primary: #17213c;
+  --text-secondary: #66758f;
+  --text-muted: #8795ac;
+
+  --like: #1ed361;
+  --like-bg: #dcfce7;
+
+  --dislike: #ef4444;
+  --dislike-bg: #fee2e2;
+
+  --radius-card: 16px;
+  --radius-btn: 10px;
+
+  --shadow:
+    0 2px 16px rgba(15, 23, 42, 0.08);
+
+  --shadow-hover:
+    0 6px 28px rgba(15, 23, 42, 0.14);
+
+  color-scheme: light;
+}
+
+/* =========================================
+   DARK THEME
+========================================= */
+
+:root[data-theme="dark"] {
+  --primary: #6f8fff;
+  --primary-hover: #8aa3ff;
+
+  --accent: #22d3ee;
+  --accent-hover: #67e8f9;
+  --accent-light: rgba(34, 211, 238, 0.12);
+
+  --indigo: var(--primary);
+  --violet: var(--accent);
+  --violet-hover: var(--accent-hover);
+  --violet-light: var(--accent-light);
+
+  --bg-page: #0f172a;
+  --bg-surface: #182235;
+  --bg-soft: #202c42;
+  --bg-hover: #26344d;
+
+  --bg: #111b2e;
+  --card: #182235;
+  --card-inner: #202c42;
+
+  --border-color: #2b3950;
+  --border-soft: #334158;
+  --border: #2b3950;
+
+  --text-primary: #f1f5f9;
+  --text-secondary: #aebbd0;
+  --text-muted: #8291aa;
+
+  --like: #4ade80;
+  --like-bg: rgba(74, 222, 128, 0.13);
+
+  --dislike: #fb7185;
+  --dislike-bg: rgba(251, 113, 133, 0.13);
+
+  --shadow:
+    0 8px 24px rgba(0, 0, 0, 0.18);
+
+  --shadow-hover:
+    0 12px 32px rgba(0, 0, 0, 0.24);
+
+  color-scheme: dark;
+}
+
+/* =========================================
+   DOCUMENT
+========================================= */
+
+html,
+body,
+#root {
+  min-height: 100vh;
+}
+
+body {
+  margin: 0;
+
+  font-family: "Inter", sans-serif;
+
+  background: var(--bg-page);
+  color: var(--text-primary);
+
+  -webkit-font-smoothing: antialiased;
+
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
+}
+
+button,
+input,
+textarea,
+select {
+  font-family: "Inter", sans-serif;
+}
+/* @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+:root {
+  --bg-page: #f6f8fc;
+  --bg-surface: #ffffff;
+  --bg-soft: #eef2f8;
+  --bg-hover: #edf2fb;
+
+  --text-primary: #17213c;
+  --text-secondary: #66758f;
+  --text-muted: #8795ac;
+
+  --border-color: #dfe6f0;
+  --border-soft: #e4e9f2;
+
+  --accent: #06b6d4;
+
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  --bg-page: #0f172a;
+  --bg-surface: #182235;
+  --bg-soft: #202c42;
+  --bg-hover: #26344d;
+
+  --text-primary: #f1f5f9;
+  --text-secondary: #aebbd0;
+  --text-muted: #8291aa;
+
+  --border-color: #2b3950;
+  --border-soft: #334158;
+
+  --accent: #22d3ee;
+
+  color-scheme: dark;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg-page);
+  color: var(--text-primary);
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
+}
 :root {
   --primary: #3858af;
   --primary-hover: #1D4ED8;
@@ -51,4 +242,4 @@ button,
 input,
 textarea {
   font-family: "Inter", sans-serif;
-}
+} */

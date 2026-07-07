@@ -283,3 +283,67 @@
   font-size: 12px;
   line-height: 1.4;
 }
+/* ─────────────────────────────────────────────
+   DARK THEME
+───────────────────────────────────────────── */
+
+:global([data-theme="dark"]) .navItem {
+  color: #aebbd0;
+}
+
+:global([data-theme="dark"]) .navItem:hover {
+  background: #18253a;
+  color: #e8eef8;
+}
+
+:global([data-theme="dark"]) .navItemActive {
+  background: #1d2d49;
+  color: #dbeafe;
+}
+
+:global([data-theme="dark"]) .sectionLabel {
+  color: #71819b;
+}
+
+:global([data-theme="dark"]) .categoryItem {
+  color: #9cabc1;
+}
+
+:global([data-theme="dark"]) .categoryItem:hover {
+  background: #18253a;
+  color: #e2e8f0;
+}
+
+:global([data-theme="dark"]) .categoryItemActive {
+  background: rgba(6, 182, 212, 0.12);
+  color: #67e8f9;
+}
+
+:global([data-theme="dark"]) .sidebarMiniCard {
+  border-color: #2b3950;
+  background: #182235;
+
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.14);
+}
+
+:global([data-theme="dark"]) .sidebarMiniCard strong {
+  color: #f1f5f9;
+}
+
+:global([data-theme="dark"]) .sidebarMiniCard span {
+  color: #9cabc1;
+}
+
+:global([data-theme="dark"]) .sidebarFooter {
+  border-top-color: #2b3950;
+}
+
+:global([data-theme="dark"]) .footerLink {
+  color: #8f9db3;
+}
+
+:global([data-theme="dark"]) .footerLink:hover {
+  background: #18253a;
+  color: #e2e8f0;
+}

@@ -37,7 +37,7 @@
 
 .textarea:focus {
   border-color: var(--accent);
-  background: #fff;
+  background: var(--card);
 }
 
 .footer {
@@ -161,112 +161,23 @@
     justify-content: center;
   }
 }
-/* 
-.card {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-card);
-  padding: 24px;
-  margin-bottom: 36px;
-  box-shadow: var(--shadow);
+/* Dark theme polish */
+
+:global([data-theme="dark"]) .card {
+  box-shadow:
+    0 8px 28px rgba(0, 0, 0, 0.18);
 }
 
-.label {
-  display: block;
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.8px;
-  margin-bottom: 12px;
-}
-
-.textarea {
-  width: 100%;
-  border: 1.5px solid var(--border);
-  border-radius: 12px;
-  padding: 14px 16px;
-  font-size: 15px;
-  color: var(--text-primary);
-  resize: none;
-  outline: none;
+:global([data-theme="dark"]) .textarea {
   background: var(--bg);
-  transition: border-color 0.2s, background 0.2s;
-  line-height: 1.6;
 }
 
-.textarea::placeholder {
-  color: var(--text-muted);
+:global([data-theme="dark"]) .textarea:focus {
+  background: var(--card);
 }
 
-.textarea:focus {
-  border-color: var(--accent);
-  background: #fff;
+:global([data-theme="dark"]) .categorySelect {
+  background-color: var(--bg);
+  color: var(--text-secondary);
+  color-scheme: dark;
 }
-
-.footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-top: 14px;
-  gap: 12px;
-}
-
-.hint {
-  font-size: 12px;
-  color: var(--text-muted);
-}
-
-.submitBtn {
-  background: var(--primary);
-  color: #fff;
-  border: none;
-  padding: 10px 22px;
-  border-radius: var(--radius-btn);
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.18s, transform 0.12s;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  white-space: nowrap;
-  letter-spacing: 0.1px;
-  flex-shrink: 0;
-}
-
-.submitBtn svg {
-  width: 15px;
-  height: 15px;
-}
-
-.submitBtn:hover {
-  background: var(--primary-hover);
-  transform: translateY(-1px);
-}
-
-.submitBtn:active {
-  transform: scale(0.98);
-}
-
-.textareaError {
-  border-color: var(--dislike) !important;
-}
-
-.errorMsg {
-  font-size: 12px;
-  color: var(--dislike);
-  margin-top: 6px;
-  font-weight: 500;
-}
-
-@media (max-width: 480px) {
-  .footer {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-  .submitBtn {
-    width: 100%;
-    justify-content: center;
-  }
-} */

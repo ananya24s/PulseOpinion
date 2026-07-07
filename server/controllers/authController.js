@@ -1,118 +1,240 @@
-const bcrypt = require("bcrypt");
+const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const { OAuth2Client } = require("google-auth-library");
+
 const {
   findUserByEmail,
+  findUserByGoogleId,
   createUser,
+  createGoogleUser,
+  linkGoogleAccount,
 } = require("../models/userModel");
 
-// ======================= REGISTER =======================
+const googleClient = new OAuth2Client(
+  process.env.GOOGLE_CLIENT_ID
+);
+
+function generateToken(user) {
+  return jwt.sign(
+    {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+    },
+    process.env.JWT_SECRET,
+    {
+      expiresIn: "7d",
+    }
+  );
+}
+
+function publicUser(user) {
+  return {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    role: user.role,
+  };
+}
 
 async function register(req, res) {
   try {
-    const { name, email, password } = req.body;
+    const name = req.body.name?.trim();
+    const email = req.body.email
+      ?.trim()
+      .toLowerCase();
+    const password = req.body.password;
 
-    // Basic validation
     if (!name || !email || !password) {
       return res.status(400).json({
-        success: false,
-        message: "All fields are required.",
+        message:
+          "Name, email, and password are required.",
       });
     }
 
-    // Check if email already exists
-    const existingUser = await findUserByEmail(email);
+    const existingUser =
+      await findUserByEmail(email);
 
     if (existingUser) {
       return res.status(409).json({
-        success: false,
-        message: "Email already registered.",
+        message:
+          "An account with this email already exists.",
       });
     }
 
-    // Hash password
-    const passwordHash = await bcrypt.hash(password, 10);
+    const passwordHash = await bcrypt.hash(
+      password,
+      12
+    );
 
-    // Create user
-    const user = await createUser({
+    const user = await createUser(
       name,
       email,
-      passwordHash,
-    });
+      passwordHash
+    );
+
+    const token = generateToken(user);
 
     return res.status(201).json({
-      success: true,
-      data: user,
+      message: "Account created successfully.",
+      data: {
+        user: publicUser(user),
+        token,
+      },
     });
-
-  } catch (err) {
-    console.error(err);
+  } catch (error) {
+    console.error("Register error:", error);
 
     return res.status(500).json({
-      success: false,
-      message: "Failed to register user.",
+      message: "Could not create account.",
     });
   }
 }
+
 async function login(req, res) {
   try {
-    const { email, password } = req.body;
+    const email = req.body.email
+      ?.trim()
+      .toLowerCase();
+    const password = req.body.password;
 
-    // Basic validation
     if (!email || !password) {
       return res.status(400).json({
-        success: false,
         message: "Email and password are required.",
       });
     }
 
-    // Find user
     const user = await findUserByEmail(email);
 
     if (!user) {
       return res.status(401).json({
-        success: false,
         message: "Invalid email or password.",
       });
     }
-    const passwordMatch = await bcrypt.compare(
+
+    if (!user.password_hash) {
+      return res.status(401).json({
+        message:
+          "This account uses Google sign-in. Continue with Google instead.",
+      });
+    }
+
+    const passwordMatches = await bcrypt.compare(
       password,
       user.password_hash
     );
 
-    if (!passwordMatch) {
+    if (!passwordMatches) {
       return res.status(401).json({
-        success: false,
         message: "Invalid email or password.",
       });
     }
-    const token = jwt.sign(
-      {
-        id: user.id,
-        email: user.email,
-        role: user.role,
-      },
-      process.env.JWT_SECRET,
-      {
-        expiresIn: "7d",
-      }
-    );
+
+    const token = generateToken(user);
 
     return res.status(200).json({
-      success: true,
-      token,
+      message: "Signed in successfully.",
       data: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
+        user: publicUser(user),
+        token,
       },
     });
-  } catch (err) {
-    console.error(err);
+  } catch (error) {
+    console.error("Login error:", error);
 
     return res.status(500).json({
-      success: false,
-      message: "Login failed.",
+      message: "Could not sign in.",
+    });
+  }
+}
+
+async function googleLogin(req, res) {
+  try {
+    const credential = req.body.credential;
+
+    if (!credential) {
+      return res.status(400).json({
+        message: "Google credential is required.",
+      });
+    }
+
+    if (!process.env.GOOGLE_CLIENT_ID) {
+      console.error(
+        "GOOGLE_CLIENT_ID is not configured."
+      );
+
+      return res.status(500).json({
+        message:
+          "Google sign-in is not configured.",
+      });
+    }
+
+    const ticket = await googleClient.verifyIdToken({
+      idToken: credential,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+
+    const payload = ticket.getPayload();
+
+    if (
+      !payload ||
+      !payload.sub ||
+      !payload.email ||
+      payload.email_verified !== true
+    ) {
+      return res.status(401).json({
+        message:
+          "Google account could not be verified.",
+      });
+    }
+
+    const googleId = payload.sub;
+    const email = payload.email
+      .trim()
+      .toLowerCase();
+    const name =
+      payload.name?.trim() ||
+      email.split("@")[0];
+
+    let user =
+      await findUserByGoogleId(googleId);
+
+    if (!user) {
+      const existingUser =
+        await findUserByEmail(email);
+
+      if (existingUser) {
+        user = await linkGoogleAccount(
+          existingUser.id,
+          googleId
+        );
+      } else {
+        user = await createGoogleUser(
+          name,
+          email,
+          googleId
+        );
+      }
+    }
+
+    const token = generateToken(user);
+
+    return res.status(200).json({
+      message: "Signed in with Google.",
+      data: {
+        user: publicUser(user),
+        token,
+      },
+    });
+  } catch (error) {
+    console.error(
+      "Google sign-in error:",
+      error
+    );
+
+    return res.status(401).json({
+      message:
+        "Google sign-in failed. Please try again.",
     });
   }
 }
@@ -120,4 +242,5 @@ async function login(req, res) {
 module.exports = {
   register,
   login,
+  googleLogin,
 };

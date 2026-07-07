@@ -1,10 +1,7 @@
-// Backend-connected PulseOpinion application
-
 import { useEffect, useMemo, useState } from "react";
-
+import AboutPage from "./components/AboutPage";
 import "./styles/global.css";
 import styles from "./App.module.css";
-
 import Navbar from "./components/Navbar";
 import SignInModal from "./components/SignInModal";
 import ProfileView from "./components/ProfileView";
@@ -140,10 +137,30 @@ export default function App() {
       sessionStorage.getItem("pulseToken")
     );
   });
+const [theme, setTheme] = useState(() => {
+  const savedTheme = localStorage.getItem("pulseTheme");
 
+  if (savedTheme === "light" || savedTheme === "dark") {
+    return savedTheme;
+  }
+
+  return window.matchMedia(
+    "(prefers-color-scheme: dark)"
+  ).matches
+    ? "dark"
+    : "light";
+});
   useEffect(() => {
     fetchQuestions();
   }, [token]);
+  useEffect(() => {
+   document.documentElement.setAttribute(
+    "data-theme",
+    theme
+  );
+
+  localStorage.setItem("pulseTheme", theme);
+}, [theme]);
 
   function handleLogout() {
     setUser(null);
@@ -440,6 +457,12 @@ function handleCategorySelect(categoryId) {
         onSignInClick={() =>
           setShowSignIn(true)
         }
+        theme={theme}
+         onThemeToggle={() =>
+         setTheme((currentTheme) =>
+          currentTheme === "light" ? "dark" : "light"
+          )
+        }
         onLogout={handleLogout}
         onTrendingClick={() => {
           setView("all");
@@ -500,34 +523,18 @@ function handleCategorySelect(categoryId) {
             }
           />
         </main>
-      ) : view === "about" ? (
-        <main className={styles.container}>
-          <div
-            style={{
-              padding: "48px 0",
-            }}
-          >
-            <button
-              type="button"
-              onClick={() =>
-                setView("all")
-              }
-            >
-              ← Back
-            </button>
-
-            <h1>About Pulse Opinion</h1>
-
-            <p>
-              Pulse Opinion is a community
-              discussion platform built around
-              questions, viewpoints, and public
-              opinion.
-            </p>
-          </div>
-        </main>
+        ) : view === "about" ? (
+       <AboutPage
+        onBack={() => setView("all")}
+       onExploreDiscussions={() => {
+       setView("all");
+       setSearchQuery("");
+       setSelectedCategory(null);
+       setSortBy("latest");
+       }}
+       />
       ) : (
-<HomeDashboard
+  <HomeDashboard
   user={user}
   token={token}
   questions={questions}
@@ -547,8 +554,8 @@ function handleCategorySelect(categoryId) {
   onNavigate={handleHomeNavigate}
   onCategorySelect={handleCategorySelect}
   onAboutClick={() => {
-    alert("About page coming soon.");
-  }}
+   setView("about");
+   }}
   onExploreAI={() => {
     alert("AI Pulse coming soon.");
   }}

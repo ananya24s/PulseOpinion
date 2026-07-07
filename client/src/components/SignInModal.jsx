@@ -1,5 +1,15 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
-import styles from './SignInModal.module.css';
+import {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+} from "react";
+
+import styles from "./SignInModal.module.css";
+
+const API_BASE = import.meta.env.VITE_API_BASE_URL;
+const GOOGLE_CLIENT_ID =
+  import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
 function FormField({
   id,
@@ -14,7 +24,10 @@ function FormField({
 }) {
   return (
     <div className={styles.field}>
-      <label className={styles.label} htmlFor={id}>
+      <label
+        className={styles.label}
+        htmlFor={id}
+      >
         {label}
       </label>
 
@@ -22,12 +35,16 @@ function FormField({
         <input
           ref={inputRef}
           id={id}
-          className={`${styles.input} ${error ? styles.inputError : ''}`}
+          className={`${styles.input} ${
+            error ? styles.inputError : ""
+          }`}
           type={type}
           value={value}
           onChange={onChange}
           autoComplete={autoComplete}
-          aria-describedby={error ? `${id}-error` : undefined}
+          aria-describedby={
+            error ? `${id}-error` : undefined
+          }
           aria-invalid={!!error}
         />
 
@@ -47,32 +64,112 @@ function FormField({
   );
 }
 
+function loadGoogleScript() {
+  return new Promise((resolve, reject) => {
+    if (window.google?.accounts?.id) {
+      resolve();
+      return;
+    }
+
+    const existingScript =
+      document.querySelector(
+        'script[src="https://accounts.google.com/gsi/client"]'
+      );
+
+    if (existingScript) {
+      existingScript.addEventListener(
+        "load",
+        resolve,
+        { once: true }
+      );
+
+      existingScript.addEventListener(
+        "error",
+        () =>
+          reject(
+            new Error(
+              "Could not load Google sign-in."
+            )
+          ),
+        { once: true }
+      );
+
+      return;
+    }
+
+    const script =
+      document.createElement("script");
+
+    script.src =
+      "https://accounts.google.com/gsi/client";
+
+    script.async = true;
+    script.defer = true;
+
+    script.onload = resolve;
+
+    script.onerror = () => {
+      reject(
+        new Error(
+          "Could not load Google sign-in."
+        )
+      );
+    };
+
+    document.head.appendChild(script);
+  });
+}
+
 export default function SignInModal({
   isOpen,
   onClose,
   triggerRef,
   onLogin,
 }) {
-  // login | register
-  const [mode, setMode] = useState('login');
+  const [mode, setMode] =
+    useState("login");
 
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [rememberMe, setRememberMe] = useState(false);
+  const [name, setName] =
+    useState("");
 
-  const [showPassword, setShowPassword] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
+  const [email, setEmail] =
+    useState("");
 
-  const [nameError, setNameError] = useState('');
-  const [emailError, setEmailError] = useState('');
-  const [passwordError, setPasswordError] = useState('');
-  const [formError, setFormError] = useState('');
+  const [password, setPassword] =
+    useState("");
+
+  const [rememberMe, setRememberMe] =
+    useState(false);
+
+  const [showPassword, setShowPassword] =
+    useState(false);
+
+  const [submitting, setSubmitting] =
+    useState(false);
+
+  const [
+    googleSubmitting,
+    setGoogleSubmitting,
+  ] = useState(false);
+
+  const [nameError, setNameError] =
+    useState("");
+
+  const [emailError, setEmailError] =
+    useState("");
+
+  const [
+    passwordError,
+    setPasswordError,
+  ] = useState("");
+
+  const [formError, setFormError] =
+    useState("");
 
   const firstInputRef = useRef(null);
   const panelRef = useRef(null);
+  const googleButtonRef = useRef(null);
 
-  // Focus first field whenever modal opens or mode changes
   useEffect(() => {
     if (!isOpen) return;
 
@@ -84,18 +181,19 @@ export default function SignInModal({
   }, [isOpen, mode]);
 
   const resetForm = useCallback(() => {
-    setMode('login');
-    setName('');
-    setEmail('');
-    setPassword('');
+    setMode("login");
+    setName("");
+    setEmail("");
+    setPassword("");
     setRememberMe(false);
     setShowPassword(false);
     setSubmitting(false);
+    setGoogleSubmitting(false);
 
-    setNameError('');
-    setEmailError('');
-    setPasswordError('');
-    setFormError('');
+    setNameError("");
+    setEmailError("");
+    setPasswordError("");
+    setFormError("");
   }, []);
 
   const handleClose = useCallback(() => {
@@ -106,112 +204,294 @@ export default function SignInModal({
     }, 50);
   }, [onClose, triggerRef]);
 
-  // Escape key + focus trap
+  const completeLogin = useCallback(
+    (json, shouldRemember) => {
+      const user = json?.data?.user;
+      const token = json?.data?.token;
+
+      if (!user || !token) {
+        throw new Error(
+          "Invalid authentication response."
+        );
+      }
+
+      onLogin(
+        user,
+        token,
+        shouldRemember
+      );
+    },
+    [onLogin]
+  );
+
+  const handleGoogleCredential =
+    useCallback(
+      async (response) => {
+        if (!response?.credential) {
+          setFormError(
+            "Google did not return a valid credential."
+          );
+          return;
+        }
+
+        setGoogleSubmitting(true);
+        setFormError("");
+
+        try {
+          const res = await fetch(
+            `${API_BASE}/auth/google`,
+            {
+              method: "POST",
+
+              headers: {
+                "Content-Type":
+                  "application/json",
+              },
+
+              body: JSON.stringify({
+                credential:
+                  response.credential,
+              }),
+            }
+          );
+
+          const json = await res.json();
+
+          if (!res.ok) {
+            throw new Error(
+              json.message ||
+                "Google sign-in failed."
+            );
+          }
+
+          completeLogin(
+            json,
+            rememberMe
+          );
+
+          handleClose();
+        } catch (err) {
+          setFormError(
+            err.message ||
+              "Google sign-in failed."
+          );
+        } finally {
+          setGoogleSubmitting(false);
+        }
+      },
+      [
+        completeLogin,
+        handleClose,
+        rememberMe,
+      ]
+    );
+
   useEffect(() => {
     if (!isOpen) return;
 
-    function handleKeyDown(e) {
-      if (e.key === 'Escape') {
-        handleClose();
+    let cancelled = false;
+
+    async function setupGoogleButton() {
+      if (!GOOGLE_CLIENT_ID) {
+        setFormError(
+          "Google sign-in is not configured."
+        );
         return;
       }
 
-      if (e.key === 'Tab') {
-        const panel = panelRef.current;
-        if (!panel) return;
+      try {
+        await loadGoogleScript();
 
-        const focusable = panel.querySelectorAll(
-          'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        if (
+          cancelled ||
+          !googleButtonRef.current
+        ) {
+          return;
+        }
+
+        window.google.accounts.id.initialize({
+          client_id: GOOGLE_CLIENT_ID,
+          callback:
+            handleGoogleCredential,
+        });
+
+        googleButtonRef.current.innerHTML =
+          "";
+
+        const buttonWidth = Math.min(
+          googleButtonRef.current
+            .clientWidth || 356,
+          400
         );
 
-        if (!focusable.length) return;
-
-        const first = focusable[0];
-        const last = focusable[focusable.length - 1];
-
-        if (e.shiftKey) {
-          if (document.activeElement === first) {
-            e.preventDefault();
-            last.focus();
+        window.google.accounts.id.renderButton(
+          googleButtonRef.current,
+          {
+            type: "standard",
+            theme: "outline",
+            size: "large",
+            text: isRegister
+              ? "signup_with"
+              : "signin_with",
+            shape: "rectangular",
+            logo_alignment: "left",
+            width: buttonWidth,
           }
-        } else {
-          if (document.activeElement === last) {
-            e.preventDefault();
-            first.focus();
-          }
+        );
+      } catch (err) {
+        if (!cancelled) {
+          setFormError(
+            err.message ||
+              "Could not initialize Google sign-in."
+          );
         }
       }
     }
 
-    window.addEventListener('keydown', handleKeyDown);
+    setupGoogleButton();
 
     return () => {
-      window.removeEventListener('keydown', handleKeyDown);
+      cancelled = true;
+    };
+  }, [
+    isOpen,
+    mode,
+    handleGoogleCredential,
+  ]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    function handleKeyDown(event) {
+      if (event.key === "Escape") {
+        handleClose();
+        return;
+      }
+
+      if (event.key !== "Tab") {
+        return;
+      }
+
+      const panel = panelRef.current;
+
+      if (!panel) return;
+
+      const focusable =
+        panel.querySelectorAll(
+          'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        );
+
+      if (!focusable.length) return;
+
+      const first = focusable[0];
+      const last =
+        focusable[
+          focusable.length - 1
+        ];
+
+      if (event.shiftKey) {
+        if (
+          document.activeElement === first
+        ) {
+          event.preventDefault();
+          last.focus();
+        }
+      } else if (
+        document.activeElement === last
+      ) {
+        event.preventDefault();
+        first.focus();
+      }
+    }
+
+    window.addEventListener(
+      "keydown",
+      handleKeyDown
+    );
+
+    return () => {
+      window.removeEventListener(
+        "keydown",
+        handleKeyDown
+      );
     };
   }, [isOpen, handleClose]);
 
-  function handleOverlayClick(e) {
-    if (e.target === e.currentTarget) {
+  function handleOverlayClick(event) {
+    if (
+      event.target === event.currentTarget
+    ) {
       handleClose();
     }
   }
 
   function validateName(value) {
-    if (mode !== 'register') return '';
+    if (mode !== "register") {
+      return "";
+    }
 
     if (!value.trim()) {
-      return 'Name is required.';
+      return "Name is required.";
     }
 
     if (value.trim().length < 2) {
-      return 'Name must be at least 2 characters.';
+      return "Name must be at least 2 characters.";
     }
 
     if (value.trim().length > 100) {
-      return 'Name must be 100 characters or fewer.';
+      return "Name must be 100 characters or fewer.";
     }
 
-    return '';
+    return "";
   }
 
   function validateEmail(value) {
     if (!value.trim()) {
-      return 'Email is required.';
+      return "Email is required.";
     }
 
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim())) {
-      return 'Enter a valid email address.';
+    if (
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(
+        value.trim()
+      )
+    ) {
+      return "Enter a valid email address.";
     }
 
-    return '';
+    return "";
   }
 
   function validatePassword(value) {
     if (!value) {
-      return 'Password is required.';
+      return "Password is required.";
     }
 
     if (value.length < 6) {
-      return 'Password must be at least 6 characters.';
+      return "Password must be at least 6 characters.";
     }
 
-    return '';
+    return "";
   }
 
   const canSubmit =
     email.trim().length > 0 &&
     password.length > 0 &&
-    (mode === 'login' || name.trim().length > 0) &&
-    !submitting;
+    (mode === "login" ||
+      name.trim().length > 0) &&
+    !submitting &&
+    !googleSubmitting;
 
   async function loginUser() {
     const res = await fetch(
-      `${import.meta.env.VITE_API_BASE_URL}/auth/login`,
+      `${API_BASE}/auth/login`,
       {
-        method: 'POST',
+        method: "POST",
+
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type":
+            "application/json",
         },
+
         body: JSON.stringify({
           email: email.trim(),
           password,
@@ -223,7 +503,8 @@ export default function SignInModal({
 
     if (!res.ok) {
       throw new Error(
-        json.message || 'Sign in failed.'
+        json.message ||
+          "Sign in failed."
       );
     }
 
@@ -232,12 +513,15 @@ export default function SignInModal({
 
   async function registerUser() {
     const res = await fetch(
-      `${import.meta.env.VITE_API_BASE_URL}/auth/register`,
+      `${API_BASE}/auth/register`,
       {
-        method: 'POST',
+        method: "POST",
+
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type":
+            "application/json",
         },
+
         body: JSON.stringify({
           name: name.trim(),
           email: email.trim(),
@@ -250,21 +534,27 @@ export default function SignInModal({
 
     if (!res.ok) {
       throw new Error(
-        json.message || 'Could not create account.'
+        json.message ||
+          "Could not create account."
       );
     }
 
     return json;
   }
 
-  async function handleSubmit(e) {
-    e.preventDefault();
+  async function handleSubmit(event) {
+    event.preventDefault();
 
-    setFormError('');
+    setFormError("");
 
-    const nErr = validateName(name);
-    const eErr = validateEmail(email);
-    const pErr = validatePassword(password);
+    const nErr =
+      validateName(name);
+
+    const eErr =
+      validateEmail(email);
+
+    const pErr =
+      validatePassword(password);
 
     setNameError(nErr);
     setEmailError(eErr);
@@ -277,16 +567,12 @@ export default function SignInModal({
     setSubmitting(true);
 
     try {
-      // REGISTER FLOW
-      if (mode === 'register') {
-        await registerUser();
+      if (mode === "register") {
+        const registerJson =
+          await registerUser();
 
-        // Automatically log in after successful registration
-        const loginJson = await loginUser();
-
-        onLogin(
-          loginJson.data,
-          loginJson.token,
+        completeLogin(
+          registerJson,
           rememberMe
         );
 
@@ -294,19 +580,19 @@ export default function SignInModal({
         return;
       }
 
-      // LOGIN FLOW
-      const loginJson = await loginUser();
+      const loginJson =
+        await loginUser();
 
-      onLogin(
-        loginJson.data,
-        loginJson.token,
+      completeLogin(
+        loginJson,
         rememberMe
       );
 
       handleClose();
     } catch (err) {
       setFormError(
-        err.message || 'Something went wrong.'
+        err.message ||
+          "Something went wrong."
       );
     } finally {
       setSubmitting(false);
@@ -315,29 +601,33 @@ export default function SignInModal({
 
   function switchMode() {
     setMode((current) =>
-      current === 'login' ? 'register' : 'login'
+      current === "login"
+        ? "register"
+        : "login"
     );
 
-    setName('');
-    setPassword('');
+    setName("");
+    setPassword("");
 
-    setNameError('');
-    setEmailError('');
-    setPasswordError('');
-    setFormError('');
+    setNameError("");
+    setEmailError("");
+    setPasswordError("");
+    setFormError("");
     setShowPassword(false);
   }
 
-  // Reset after modal closes
   useEffect(() => {
     if (!isOpen) {
       resetForm();
     }
   }, [isOpen, resetForm]);
 
-  if (!isOpen) return null;
+  if (!isOpen) {
+    return null;
+  }
 
-  const isRegister = mode === 'register';
+  const isRegister =
+    mode === "register";
 
   return (
     <div
@@ -351,15 +641,14 @@ export default function SignInModal({
         className={styles.panel}
         ref={panelRef}
       >
-        {/* Close button */}
         <button
           type="button"
           className={styles.closeBtn}
           onClick={handleClose}
           aria-label={
             isRegister
-              ? 'Close create account modal'
-              : 'Close sign in modal'
+              ? "Close create account modal"
+              : "Close sign in modal"
           }
         >
           <svg
@@ -377,6 +666,7 @@ export default function SignInModal({
               x2="6"
               y2="18"
             />
+
             <line
               x1="6"
               y1="6"
@@ -386,37 +676,42 @@ export default function SignInModal({
           </svg>
         </button>
 
-        {/* Branding */}
         <div className={styles.brand}>
-          <span className={styles.brandName}>
+          <span
+            className={styles.brandName}
+          >
             Pulse
-            <span className={styles.brandAccent}>
+            <span
+              className={
+                styles.brandAccent
+              }
+            >
               Opinion
             </span>
           </span>
 
-          <span className={styles.brandBadge}>
+          <span
+            className={styles.brandBadge}
+          >
             BETA
           </span>
         </div>
 
-        {/* Heading */}
         <h2
           id="modal-title"
           className={styles.heading}
         >
           {isRegister
-            ? 'Create your account'
-            : 'Welcome back'}
+            ? "Create your account"
+            : "Welcome back"}
         </h2>
 
         <p className={styles.subheading}>
           {isRegister
-            ? 'Join the discussion and share your opinion'
-            : 'Sign in to join the discussion'}
+            ? "Join the discussion and share your opinion"
+            : "Sign in to join the discussion"}
         </p>
 
-        {/* General server/API error */}
         {formError && (
           <p
             className={styles.fieldError}
@@ -431,22 +726,23 @@ export default function SignInModal({
           onSubmit={handleSubmit}
           noValidate
         >
-          {/* Name field - registration only */}
           {isRegister && (
             <FormField
               id="signup-name"
               label="Name"
               type="text"
               value={name}
-              onChange={(e) => {
-                setName(e.target.value);
+              onChange={(event) => {
+                setName(
+                  event.target.value
+                );
 
                 if (nameError) {
-                  setNameError('');
+                  setNameError("");
                 }
 
                 if (formError) {
-                  setFormError('');
+                  setFormError("");
                 }
               }}
               error={nameError}
@@ -455,25 +751,26 @@ export default function SignInModal({
             />
           )}
 
-          {/* Email field */}
           <FormField
             id={
               isRegister
-                ? 'signup-email'
-                : 'signin-email'
+                ? "signup-email"
+                : "signin-email"
             }
             label="Email address"
             type="email"
             value={email}
-            onChange={(e) => {
-              setEmail(e.target.value);
+            onChange={(event) => {
+              setEmail(
+                event.target.value
+              );
 
               if (emailError) {
-                setEmailError('');
+                setEmailError("");
               }
 
               if (formError) {
-                setFormError('');
+                setFormError("");
               }
             }}
             error={emailError}
@@ -485,48 +782,51 @@ export default function SignInModal({
             }
           />
 
-          {/* Password */}
           <FormField
             id={
               isRegister
-                ? 'signup-password'
-                : 'signin-password'
+                ? "signup-password"
+                : "signin-password"
             }
             label="Password"
             type={
               showPassword
-                ? 'text'
-                : 'password'
+                ? "text"
+                : "password"
             }
             value={password}
-            onChange={(e) => {
-              setPassword(e.target.value);
+            onChange={(event) => {
+              setPassword(
+                event.target.value
+              );
 
               if (passwordError) {
-                setPasswordError('');
+                setPasswordError("");
               }
 
               if (formError) {
-                setFormError('');
+                setFormError("");
               }
             }}
             error={passwordError}
             autoComplete={
               isRegister
-                ? 'new-password'
-                : 'current-password'
+                ? "new-password"
+                : "current-password"
             }
           >
             <button
               type="button"
               className={styles.eyeBtn}
               onClick={() =>
-                setShowPassword((v) => !v)
+                setShowPassword(
+                  (current) => !current
+                )
               }
               aria-label={
                 showPassword
-                  ? 'Hide password'
-                  : 'Show password'
+                  ? "Hide password"
+                  : "Show password"
               }
             >
               {showPassword ? (
@@ -539,8 +839,8 @@ export default function SignInModal({
                   strokeLinejoin="round"
                   aria-hidden="true"
                 >
-                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
-                  <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" />
+                  <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" />
                   <line
                     x1="1"
                     y1="1"
@@ -558,7 +858,8 @@ export default function SignInModal({
                   strokeLinejoin="round"
                   aria-hidden="true"
                 >
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+
                   <circle
                     cx="12"
                     cy="12"
@@ -569,15 +870,20 @@ export default function SignInModal({
             </button>
           </FormField>
 
-          {/* Remember me */}
-          <div className={styles.rememberRow}>
-            <label className={styles.checkLabel}>
+          <div
+            className={styles.rememberRow}
+          >
+            <label
+              className={styles.checkLabel}
+            >
               <input
                 type="checkbox"
                 className={styles.checkbox}
                 checked={rememberMe}
-                onChange={(e) =>
-                  setRememberMe(e.target.checked)
+                onChange={(event) =>
+                  setRememberMe(
+                    event.target.checked
+                  )
                 }
               />
 
@@ -587,15 +893,18 @@ export default function SignInModal({
             {!isRegister && (
               <a
                 href="#"
-                className={styles.forgotLink}
-                onClick={(e) => e.preventDefault()}
+                className={
+                  styles.forgotLink
+                }
+                onClick={(event) =>
+                  event.preventDefault()
+                }
               >
                 Forgot password?
               </a>
             )}
           </div>
 
-          {/* Submit */}
           <button
             type="submit"
             className={styles.submitBtn}
@@ -603,60 +912,51 @@ export default function SignInModal({
           >
             {submitting
               ? isRegister
-                ? 'Creating Account...'
-                : 'Signing In...'
+                ? "Creating Account..."
+                : "Signing In..."
               : isRegister
-              ? 'Create Account'
-              : 'Sign In'}
+              ? "Create Account"
+              : "Sign In"}
           </button>
 
-          {/* Divider */}
           <div className={styles.divider}>
-            <span className={styles.dividerLine} />
-            <span className={styles.dividerText}>
+            <span
+              className={styles.dividerLine}
+            />
+
+            <span
+              className={styles.dividerText}
+            >
               or
             </span>
-            <span className={styles.dividerLine} />
+
+            <span
+              className={styles.dividerLine}
+            />
           </div>
 
-          {/* Google button - intentionally disabled */}
-          <button
-            type="button"
-            className={styles.googleBtn}
-            disabled
-            title="Google sign-in coming soon"
-          >
-            <svg
-              viewBox="0 0 24 24"
-              className={styles.googleIcon}
-              aria-hidden="true"
+          {googleSubmitting && (
+            <p
+              className={
+                styles.googleStatus
+              }
             >
-              <path
-                fill="#4285F4"
-                d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-              />
-              <path
-                fill="#34A853"
-                d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-              />
-              <path
-                fill="#FBBC05"
-                d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"
-              />
-              <path
-                fill="#EA4335"
-                d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 0 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-              />
-            </svg>
+              Signing in with Google...
+            </p>
+          )}
 
-            Google sign-in coming soon
-          </button>
+          <div
+            ref={googleButtonRef}
+            className={
+              styles.googleButtonContainer
+            }
+            aria-label="Google sign in"
+          />
         </form>
 
-        {/* Mode switch */}
         <p className={styles.footer}>
           {isRegister
-            ? 'Already have an account? '
+            ? "Already have an account? "
             : "Don't have an account? "}
 
           <button
@@ -665,11 +965,686 @@ export default function SignInModal({
             onClick={switchMode}
           >
             {isRegister
-              ? 'Sign In'
-              : 'Create Account'}
+              ? "Sign In"
+              : "Create Account"}
           </button>
         </p>
       </div>
     </div>
   );
 }
+// import { useState, useEffect, useRef, useCallback } from 'react';
+// import styles from './SignInModal.module.css';
+
+// function FormField({
+//   id,
+//   label,
+//   type,
+//   value,
+//   onChange,
+//   error,
+//   autoComplete,
+//   children,
+//   inputRef,
+// }) {
+//   return (
+//     <div className={styles.field}>
+//       <label className={styles.label} htmlFor={id}>
+//         {label}
+//       </label>
+
+//       <div className={styles.inputWrap}>
+//         <input
+//           ref={inputRef}
+//           id={id}
+//           className={`${styles.input} ${error ? styles.inputError : ''}`}
+//           type={type}
+//           value={value}
+//           onChange={onChange}
+//           autoComplete={autoComplete}
+//           aria-describedby={error ? `${id}-error` : undefined}
+//           aria-invalid={!!error}
+//         />
+
+//         {children}
+//       </div>
+
+//       {error && (
+//         <p
+//           id={`${id}-error`}
+//           className={styles.fieldError}
+//           role="alert"
+//         >
+//           {error}
+//         </p>
+//       )}
+//     </div>
+//   );
+// }
+
+// export default function SignInModal({
+//   isOpen,
+//   onClose,
+//   triggerRef,
+//   onLogin,
+// }) {
+//   // login | register
+//   const [mode, setMode] = useState('login');
+
+//   const [name, setName] = useState('');
+//   const [email, setEmail] = useState('');
+//   const [password, setPassword] = useState('');
+//   const [rememberMe, setRememberMe] = useState(false);
+
+//   const [showPassword, setShowPassword] = useState(false);
+//   const [submitting, setSubmitting] = useState(false);
+
+//   const [nameError, setNameError] = useState('');
+//   const [emailError, setEmailError] = useState('');
+//   const [passwordError, setPasswordError] = useState('');
+//   const [formError, setFormError] = useState('');
+
+//   const firstInputRef = useRef(null);
+//   const panelRef = useRef(null);
+
+//   // Focus first field whenever modal opens or mode changes
+//   useEffect(() => {
+//     if (!isOpen) return;
+
+//     const timer = setTimeout(() => {
+//       firstInputRef.current?.focus();
+//     }, 60);
+
+//     return () => clearTimeout(timer);
+//   }, [isOpen, mode]);
+
+//   const resetForm = useCallback(() => {
+//     setMode('login');
+//     setName('');
+//     setEmail('');
+//     setPassword('');
+//     setRememberMe(false);
+//     setShowPassword(false);
+//     setSubmitting(false);
+
+//     setNameError('');
+//     setEmailError('');
+//     setPasswordError('');
+//     setFormError('');
+//   }, []);
+
+//   const handleClose = useCallback(() => {
+//     onClose();
+
+//     setTimeout(() => {
+//       triggerRef?.current?.focus();
+//     }, 50);
+//   }, [onClose, triggerRef]);
+
+//   // Escape key + focus trap
+//   useEffect(() => {
+//     if (!isOpen) return;
+
+//     function handleKeyDown(e) {
+//       if (e.key === 'Escape') {
+//         handleClose();
+//         return;
+//       }
+
+//       if (e.key === 'Tab') {
+//         const panel = panelRef.current;
+//         if (!panel) return;
+
+//         const focusable = panel.querySelectorAll(
+//           'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+//         );
+
+//         if (!focusable.length) return;
+
+//         const first = focusable[0];
+//         const last = focusable[focusable.length - 1];
+
+//         if (e.shiftKey) {
+//           if (document.activeElement === first) {
+//             e.preventDefault();
+//             last.focus();
+//           }
+//         } else {
+//           if (document.activeElement === last) {
+//             e.preventDefault();
+//             first.focus();
+//           }
+//         }
+//       }
+//     }
+
+//     window.addEventListener('keydown', handleKeyDown);
+
+//     return () => {
+//       window.removeEventListener('keydown', handleKeyDown);
+//     };
+//   }, [isOpen, handleClose]);
+
+//   function handleOverlayClick(e) {
+//     if (e.target === e.currentTarget) {
+//       handleClose();
+//     }
+//   }
+
+//   function validateName(value) {
+//     if (mode !== 'register') return '';
+
+//     if (!value.trim()) {
+//       return 'Name is required.';
+//     }
+
+//     if (value.trim().length < 2) {
+//       return 'Name must be at least 2 characters.';
+//     }
+
+//     if (value.trim().length > 100) {
+//       return 'Name must be 100 characters or fewer.';
+//     }
+
+//     return '';
+//   }
+
+//   function validateEmail(value) {
+//     if (!value.trim()) {
+//       return 'Email is required.';
+//     }
+
+//     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim())) {
+//       return 'Enter a valid email address.';
+//     }
+
+//     return '';
+//   }
+
+//   function validatePassword(value) {
+//     if (!value) {
+//       return 'Password is required.';
+//     }
+
+//     if (value.length < 6) {
+//       return 'Password must be at least 6 characters.';
+//     }
+
+//     return '';
+//   }
+
+//   const canSubmit =
+//     email.trim().length > 0 &&
+//     password.length > 0 &&
+//     (mode === 'login' || name.trim().length > 0) &&
+//     !submitting;
+
+//   async function loginUser() {
+//     const res = await fetch(
+//       `${import.meta.env.VITE_API_BASE_URL}/auth/login`,
+//       {
+//         method: 'POST',
+//         headers: {
+//           'Content-Type': 'application/json',
+//         },
+//         body: JSON.stringify({
+//           email: email.trim(),
+//           password,
+//         }),
+//       }
+//     );
+
+//     const json = await res.json();
+
+//     if (!res.ok) {
+//       throw new Error(
+//         json.message || 'Sign in failed.'
+//       );
+//     }
+
+//     return json;
+//   }
+
+//   async function registerUser() {
+//     const res = await fetch(
+//       `${import.meta.env.VITE_API_BASE_URL}/auth/register`,
+//       {
+//         method: 'POST',
+//         headers: {
+//           'Content-Type': 'application/json',
+//         },
+//         body: JSON.stringify({
+//           name: name.trim(),
+//           email: email.trim(),
+//           password,
+//         }),
+//       }
+//     );
+
+//     const json = await res.json();
+
+//     if (!res.ok) {
+//       throw new Error(
+//         json.message || 'Could not create account.'
+//       );
+//     }
+
+//     return json;
+//   }
+
+//   async function handleSubmit(e) {
+//     e.preventDefault();
+
+//     setFormError('');
+
+//     const nErr = validateName(name);
+//     const eErr = validateEmail(email);
+//     const pErr = validatePassword(password);
+
+//     setNameError(nErr);
+//     setEmailError(eErr);
+//     setPasswordError(pErr);
+
+//     if (nErr || eErr || pErr) {
+//       return;
+//     }
+
+//     setSubmitting(true);
+
+//     try {
+//       // REGISTER FLOW
+//       if (mode === 'register') {
+//         await registerUser();
+
+//         // Automatically log in after successful registration
+//         const loginJson = await loginUser();
+
+//         onLogin(
+//           loginJson.data,
+//           loginJson.token,
+//           rememberMe
+//         );
+
+//         handleClose();
+//         return;
+//       }
+
+//       // LOGIN FLOW
+//       const loginJson = await loginUser();
+
+//       onLogin(
+//         loginJson.data,
+//         loginJson.token,
+//         rememberMe
+//       );
+
+//       handleClose();
+//     } catch (err) {
+//       setFormError(
+//         err.message || 'Something went wrong.'
+//       );
+//     } finally {
+//       setSubmitting(false);
+//     }
+//   }
+
+//   function switchMode() {
+//     setMode((current) =>
+//       current === 'login' ? 'register' : 'login'
+//     );
+
+//     setName('');
+//     setPassword('');
+
+//     setNameError('');
+//     setEmailError('');
+//     setPasswordError('');
+//     setFormError('');
+//     setShowPassword(false);
+//   }
+
+//   // Reset after modal closes
+//   useEffect(() => {
+//     if (!isOpen) {
+//       resetForm();
+//     }
+//   }, [isOpen, resetForm]);
+
+//   if (!isOpen) return null;
+
+//   const isRegister = mode === 'register';
+
+//   return (
+//     <div
+//       className={styles.overlay}
+//       onClick={handleOverlayClick}
+//       role="dialog"
+//       aria-modal="true"
+//       aria-labelledby="modal-title"
+//     >
+//       <div
+//         className={styles.panel}
+//         ref={panelRef}
+//       >
+//         {/* Close button */}
+//         <button
+//           type="button"
+//           className={styles.closeBtn}
+//           onClick={handleClose}
+//           aria-label={
+//             isRegister
+//               ? 'Close create account modal'
+//               : 'Close sign in modal'
+//           }
+//         >
+//           <svg
+//             viewBox="0 0 24 24"
+//             fill="none"
+//             stroke="currentColor"
+//             strokeWidth="2.5"
+//             strokeLinecap="round"
+//             strokeLinejoin="round"
+//             aria-hidden="true"
+//           >
+//             <line
+//               x1="18"
+//               y1="6"
+//               x2="6"
+//               y2="18"
+//             />
+//             <line
+//               x1="6"
+//               y1="6"
+//               x2="18"
+//               y2="18"
+//             />
+//           </svg>
+//         </button>
+
+//         {/* Branding */}
+//         <div className={styles.brand}>
+//           <span className={styles.brandName}>
+//             Pulse
+//             <span className={styles.brandAccent}>
+//               Opinion
+//             </span>
+//           </span>
+
+//           <span className={styles.brandBadge}>
+//             BETA
+//           </span>
+//         </div>
+
+//         {/* Heading */}
+//         <h2
+//           id="modal-title"
+//           className={styles.heading}
+//         >
+//           {isRegister
+//             ? 'Create your account'
+//             : 'Welcome back'}
+//         </h2>
+
+//         <p className={styles.subheading}>
+//           {isRegister
+//             ? 'Join the discussion and share your opinion'
+//             : 'Sign in to join the discussion'}
+//         </p>
+
+//         {/* General server/API error */}
+//         {formError && (
+//           <p
+//             className={styles.fieldError}
+//             role="alert"
+//           >
+//             {formError}
+//           </p>
+//         )}
+
+//         <form
+//           className={styles.form}
+//           onSubmit={handleSubmit}
+//           noValidate
+//         >
+//           {/* Name field - registration only */}
+//           {isRegister && (
+//             <FormField
+//               id="signup-name"
+//               label="Name"
+//               type="text"
+//               value={name}
+//               onChange={(e) => {
+//                 setName(e.target.value);
+
+//                 if (nameError) {
+//                   setNameError('');
+//                 }
+
+//                 if (formError) {
+//                   setFormError('');
+//                 }
+//               }}
+//               error={nameError}
+//               autoComplete="name"
+//               inputRef={firstInputRef}
+//             />
+//           )}
+
+//           {/* Email field */}
+//           <FormField
+//             id={
+//               isRegister
+//                 ? 'signup-email'
+//                 : 'signin-email'
+//             }
+//             label="Email address"
+//             type="email"
+//             value={email}
+//             onChange={(e) => {
+//               setEmail(e.target.value);
+
+//               if (emailError) {
+//                 setEmailError('');
+//               }
+
+//               if (formError) {
+//                 setFormError('');
+//               }
+//             }}
+//             error={emailError}
+//             autoComplete="email"
+//             inputRef={
+//               isRegister
+//                 ? undefined
+//                 : firstInputRef
+//             }
+//           />
+
+//           {/* Password */}
+//           <FormField
+//             id={
+//               isRegister
+//                 ? 'signup-password'
+//                 : 'signin-password'
+//             }
+//             label="Password"
+//             type={
+//               showPassword
+//                 ? 'text'
+//                 : 'password'
+//             }
+//             value={password}
+//             onChange={(e) => {
+//               setPassword(e.target.value);
+
+//               if (passwordError) {
+//                 setPasswordError('');
+//               }
+
+//               if (formError) {
+//                 setFormError('');
+//               }
+//             }}
+//             error={passwordError}
+//             autoComplete={
+//               isRegister
+//                 ? 'new-password'
+//                 : 'current-password'
+//             }
+//           >
+//             <button
+//               type="button"
+//               className={styles.eyeBtn}
+//               onClick={() =>
+//                 setShowPassword((v) => !v)
+//               }
+//               aria-label={
+//                 showPassword
+//                   ? 'Hide password'
+//                   : 'Show password'
+//               }
+//             >
+//               {showPassword ? (
+//                 <svg
+//                   viewBox="0 0 24 24"
+//                   fill="none"
+//                   stroke="currentColor"
+//                   strokeWidth="2"
+//                   strokeLinecap="round"
+//                   strokeLinejoin="round"
+//                   aria-hidden="true"
+//                 >
+//                   <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+//                   <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+//                   <line
+//                     x1="1"
+//                     y1="1"
+//                     x2="23"
+//                     y2="23"
+//                   />
+//                 </svg>
+//               ) : (
+//                 <svg
+//                   viewBox="0 0 24 24"
+//                   fill="none"
+//                   stroke="currentColor"
+//                   strokeWidth="2"
+//                   strokeLinecap="round"
+//                   strokeLinejoin="round"
+//                   aria-hidden="true"
+//                 >
+//                   <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+//                   <circle
+//                     cx="12"
+//                     cy="12"
+//                     r="3"
+//                   />
+//                 </svg>
+//               )}
+//             </button>
+//           </FormField>
+
+//           {/* Remember me */}
+//           <div className={styles.rememberRow}>
+//             <label className={styles.checkLabel}>
+//               <input
+//                 type="checkbox"
+//                 className={styles.checkbox}
+//                 checked={rememberMe}
+//                 onChange={(e) =>
+//                   setRememberMe(e.target.checked)
+//                 }
+//               />
+
+//               <span>Remember me</span>
+//             </label>
+
+//             {!isRegister && (
+//               <a
+//                 href="#"
+//                 className={styles.forgotLink}
+//                 onClick={(e) => e.preventDefault()}
+//               >
+//                 Forgot password?
+//               </a>
+//             )}
+//           </div>
+
+//           {/* Submit */}
+//           <button
+//             type="submit"
+//             className={styles.submitBtn}
+//             disabled={!canSubmit}
+//           >
+//             {submitting
+//               ? isRegister
+//                 ? 'Creating Account...'
+//                 : 'Signing In...'
+//               : isRegister
+//               ? 'Create Account'
+//               : 'Sign In'}
+//           </button>
+
+//           {/* Divider */}
+//           <div className={styles.divider}>
+//             <span className={styles.dividerLine} />
+//             <span className={styles.dividerText}>
+//               or
+//             </span>
+//             <span className={styles.dividerLine} />
+//           </div>
+
+//           {/* Google button - intentionally disabled */}
+//           <button
+//             type="button"
+//             className={styles.googleBtn}
+//             disabled
+//             title="Google sign-in coming soon"
+//           >
+//             <svg
+//               viewBox="0 0 24 24"
+//               className={styles.googleIcon}
+//               aria-hidden="true"
+//             >
+//               <path
+//                 fill="#4285F4"
+//                 d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+//               />
+//               <path
+//                 fill="#34A853"
+//                 d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+//               />
+//               <path
+//                 fill="#FBBC05"
+//                 d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"
+//               />
+//               <path
+//                 fill="#EA4335"
+//                 d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 0 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+//               />
+//             </svg>
+
+//             Google sign-in coming soon
+//           </button>
+//         </form>
+
+//         {/* Mode switch */}
+//         <p className={styles.footer}>
+//           {isRegister
+//             ? 'Already have an account? '
+//             : "Don't have an account? "}
+
+//           <button
+//             type="button"
+//             className={styles.createLink}
+//             onClick={switchMode}
+//           >
+//             {isRegister
+//               ? 'Sign In'
+//               : 'Create Account'}
+//           </button>
+//         </p>
+//       </div>
+//     </div>
+//   );
+// }

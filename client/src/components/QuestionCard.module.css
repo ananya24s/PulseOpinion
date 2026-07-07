@@ -205,3 +205,25 @@
   background: #fef2f2;
   color: #dc2626;
 }
+:global([data-theme="dark"]) .card {
+  box-shadow:
+    0 8px 26px rgba(0, 0, 0, 0.16);
+}
+
+:global([data-theme="dark"]) .card:hover {
+  box-shadow:
+    0 12px 32px rgba(0, 0, 0, 0.22);
+}
+
+:global([data-theme="dark"]) .actionBtn:hover {
+  background: var(--bg-soft);
+}
+
+:global([data-theme="dark"]) .deleteBtn {
+  color: var(--text-muted);
+}
+
+:global([data-theme="dark"]) .deleteBtn:hover {
+  background: rgba(220, 38, 38, 0.14);
+  color: #f87171;
+}
