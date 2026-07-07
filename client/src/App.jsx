@@ -496,7 +496,14 @@ function handleCategorySelect(categoryId) {
         onAdminClick={() =>
           setView("admin")
         }
-      />
+        onHomeClick={() => {
+          setView("all");
+          setSearchQuery("");
+          setSelectedCategory(null);
+          setSortBy("latest");
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }}
+        />
 
       <SignInModal
         isOpen={showSignIn}

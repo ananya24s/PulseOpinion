@@ -42,7 +42,6 @@ function ThemeIcon({ theme }) {
     </svg>
   );
 }
-
 export default function Navbar({
   onSignInClick,
   user,
@@ -53,8 +52,9 @@ export default function Navbar({
   onProfileClick,
   onAdminClick,
   onMyQuestionsClick,
-  theme,
   onThemeToggle,
+  theme,
+  onHomeClick,
 }) {
   const [showMenu, setShowMenu] = useState(false);
 
@@ -65,7 +65,26 @@ export default function Navbar({
 
   return (
     <nav className={styles.nav}>
-      <div className={styles.logo}>
+     <button type="button"
+      className={styles.logo}
+      onClick={onHomeClick}
+      aria-label="Go to home">
+    <img
+      src="/Pulselogo.png"
+      alt="Pulse Opinion Logo"
+      className={styles.logoImage}
+     />
+
+     <span>
+      Pulse
+     <span className={styles.logoAccent}>
+      {" "}Opinion
+     </span>
+    </span>
+
+      <span className={styles.badge}>BETA</span>
+     </button>
+      {/* <div className={styles.logo}>
         <img
           src="/Pulselogo.png"
           alt="Pulse Opinion Logo"
@@ -80,7 +99,7 @@ export default function Navbar({
         </span>
 
         <span className={styles.badge}>BETA</span>
-      </div>
+      </div> */}
 
       <div className={styles.links}>
         <button
