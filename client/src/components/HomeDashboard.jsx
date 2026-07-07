@@ -16,40 +16,44 @@ export default function HomeDashboard({
   sortBy,
   setSortBy,
   view,
+  activeNav,
+  selectedCategory,
   onAddQuestion,
   onDeleteQuestion,
   onRetry,
   onNavigate,
   onCategorySelect,
+  onAboutClick,
+  onExploreAI,
 }) {
   return (
     <div className={styles.page}>
       <div className={styles.layout}>
-        {/* LEFT SIDEBAR */}
         <aside className={styles.sidebarColumn}>
           <HomeSidebar
+            questions={questions}
+            activeNav={activeNav}
+            selectedCategory={selectedCategory}
             onNavigate={onNavigate}
             onCategorySelect={onCategorySelect}
+            onAboutClick={onAboutClick}
           />
         </aside>
 
-        {/* MAIN FEED */}
         <main className={styles.feedColumn}>
           <div className={styles.feedIntro}>
             <h1 className={styles.feedHeading}>
-              What's on your <span>mind?</span>
+              What&apos;s on your <span>mind?</span>
             </h1>
 
             <p className={styles.feedSubtitle}>
-              Ask questions, spark debates, and discover what the public really
-              thinks.
+              Ask questions, spark debates, and discover what
+              the public really thinks.
             </p>
           </div>
 
-          {/* REAL EXISTING QUESTION FORM */}
           <QuestionForm onSubmit={onAddQuestion} />
 
-          {/* SEARCH */}
           <div className={styles.controls}>
             <div className={styles.searchWrap}>
               <svg
@@ -63,7 +67,12 @@ export default function HomeDashboard({
                 aria-hidden="true"
               >
                 <circle cx="11" cy="11" r="8" />
-                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                <line
+                  x1="21"
+                  y1="21"
+                  x2="16.65"
+                  y2="16.65"
+                />
               </svg>
 
               <input
@@ -71,7 +80,9 @@ export default function HomeDashboard({
                 type="text"
                 placeholder="Search questions, authors, or categories..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(event) =>
+                  setSearchQuery(event.target.value)
+                }
                 aria-label="Search questions"
               />
 
@@ -88,7 +99,6 @@ export default function HomeDashboard({
             </div>
           </div>
 
-          {/* FEED TABS */}
           <div className={styles.feedControls}>
             <div
               className={styles.tabGroup}
@@ -100,7 +110,9 @@ export default function HomeDashboard({
                 role="tab"
                 aria-selected={sortBy === "latest"}
                 className={`${styles.tab} ${
-                  sortBy === "latest" ? styles.tabActive : ""
+                  sortBy === "latest"
+                    ? styles.tabActive
+                    : ""
                 }`}
                 onClick={() => setSortBy("latest")}
               >
@@ -112,7 +124,9 @@ export default function HomeDashboard({
                 role="tab"
                 aria-selected={sortBy === "mostLiked"}
                 className={`${styles.tab} ${
-                  sortBy === "mostLiked" ? styles.tabActive : ""
+                  sortBy === "mostLiked"
+                    ? styles.tabActive
+                    : ""
                 }`}
                 onClick={() => setSortBy("mostLiked")}
               >
@@ -122,11 +136,17 @@ export default function HomeDashboard({
               <button
                 type="button"
                 role="tab"
-                aria-selected={sortBy === "mostCommented"}
+                aria-selected={
+                  sortBy === "mostCommented"
+                }
                 className={`${styles.tab} ${
-                  sortBy === "mostCommented" ? styles.tabActive : ""
+                  sortBy === "mostCommented"
+                    ? styles.tabActive
+                    : ""
                 }`}
-                onClick={() => setSortBy("mostCommented")}
+                onClick={() =>
+                  setSortBy("mostCommented")
+                }
               >
                 Most Debated
               </button>
@@ -138,7 +158,6 @@ export default function HomeDashboard({
             </span>
           </div>
 
-          {/* MY QUESTIONS BACK BUTTON */}
           {view === "mine" && (
             <button
               type="button"
@@ -149,14 +168,22 @@ export default function HomeDashboard({
             </button>
           )}
 
-          {/* CURRENT FEED LABEL */}
           <div className={styles.sectionLabel}>
             <span>
               {view === "mine"
                 ? `My Questions (${filteredQuestions.length})`
+                : selectedCategory
+                ? `${
+                    selectedCategory
+                      .charAt(0)
+                      .toUpperCase() +
+                    selectedCategory.slice(1)
+                  } Discussions`
                 : searchQuery
                 ? `${filteredQuestions.length} result${
-                    filteredQuestions.length !== 1 ? "s" : ""
+                    filteredQuestions.length !== 1
+                      ? "s"
+                      : ""
                   } for "${searchQuery}"`
                 : sortBy === "mostLiked"
                 ? "Most Liked Discussions"
@@ -166,22 +193,24 @@ export default function HomeDashboard({
             </span>
           </div>
 
-          {/* LOADING */}
           {loading && (
             <div
               className={styles.loadingWrap}
               aria-label="Loading questions"
             >
               <span className={styles.spinner} />
+
               <p className={styles.loadingText}>
                 Loading discussions...
               </p>
             </div>
           )}
 
-          {/* ERROR */}
           {!loading && fetchError && (
-            <div className={styles.errorBanner} role="alert">
+            <div
+              className={styles.errorBanner}
+              role="alert"
+            >
               <p>{fetchError}</p>
 
               <button
@@ -194,7 +223,6 @@ export default function HomeDashboard({
             </div>
           )}
 
-          {/* REAL EXISTING QUESTION CARDS */}
           {!loading && !fetchError && (
             <section
               className={styles.feedList}
@@ -207,14 +235,20 @@ export default function HomeDashboard({
                   <p>
                     {searchQuery
                       ? "Try a different search term or clear your current search."
+                      : selectedCategory
+                      ? `There are no ${selectedCategory} discussions yet.`
                       : "There are no questions in this view yet."}
                   </p>
 
                   {searchQuery && (
                     <button
                       type="button"
-                      className={styles.emptySearchClear}
-                      onClick={() => setSearchQuery("")}
+                      className={
+                        styles.emptySearchClear
+                      }
+                      onClick={() =>
+                        setSearchQuery("")
+                      }
                     >
                       Clear search
                     </button>
@@ -235,9 +269,12 @@ export default function HomeDashboard({
           )}
         </main>
 
-        {/* RIGHT INSIGHTS */}
         <aside className={styles.insightsColumn}>
-          <HomeInsights questions={questions} />
+          <HomeInsights
+            questions={questions}
+            onTopicClick={onCategorySelect}
+            onExploreAI={onExploreAI}
+          />
         </aside>
       </div>
     </div>

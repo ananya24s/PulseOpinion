@@ -333,3 +333,9 @@
     border-top: 1px solid #e5eaf2;
   }
 }
+.emptyText {
+  margin: 0;
+  color: #8795ac;
+  font-size: 13px;
+  line-height: 1.5;
+}
