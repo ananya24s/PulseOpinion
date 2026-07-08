@@ -380,3 +380,85 @@
   cursor: wait;
   opacity: 0.78;
 }
+.aiContextBox {
+  margin-top: 12px;
+  padding: 14px;
+
+  border: 1px solid
+    rgba(6, 182, 212, 0.24);
+  border-radius: 12px;
+
+  background: rgba(6, 182, 212, 0.06);
+}
+
+.aiContextHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+
+  margin-bottom: 10px;
+}
+
+.aiContextTitle {
+  display: block;
+
+  color: var(--text-primary);
+
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.aiContextHint {
+  display: block;
+
+  margin-top: 3px;
+
+  color: var(--text-muted);
+
+  font-size: 11px;
+}
+
+.aiContextCount {
+  flex: 0 0 auto;
+
+  color: var(--text-muted);
+
+  font-size: 10px;
+}
+
+.aiContextTextarea {
+  width: 100%;
+  min-height: 140px;
+
+  padding: 11px 12px;
+
+  border: 1px solid var(--border);
+  border-radius: 10px;
+
+  background: var(--card);
+  color: var(--text-primary);
+
+  font: inherit;
+  font-size: 12px;
+  line-height: 1.55;
+
+  resize: vertical;
+  outline: none;
+
+  box-sizing: border-box;
+}
+
+.aiContextTextarea:focus {
+  border-color: var(--accent);
+
+  box-shadow:
+    0 0 0 3px
+    rgba(6, 182, 212, 0.1);
+}
+
+@media (max-width: 600px) {
+  .aiContextHeader {
+    flex-direction: column;
+  }
+}

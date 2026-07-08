@@ -255,7 +255,8 @@ const [theme, setTheme] = useState(() => {
   async function handleAddQuestion(
   text,
   category,
-  attachment = null
+  attachment = null,
+  aiContext=""
   ) {
    if (!token) {
     setShowSignIn(true);
@@ -268,6 +269,12 @@ const [theme, setTheme] = useState(() => {
 
    formData.append("text", text);
    formData.append("category", category);
+   if (aiContext.trim()) {
+   formData.append(
+    "aiContext",
+    aiContext.trim()
+   );
+  }
 
    if (attachment) {
      formData.append(

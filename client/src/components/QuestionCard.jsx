@@ -73,6 +73,7 @@ export default function QuestionCard({ question, token, currentUser, onDelete })
   const total = likes + dislikes;
   const likePct = total ? Math.round((likes / total) * 100) : 50;
   const tagStyle = TAG_STYLES[question.tag] ?? { color: '#0e7490', bg: '#CFFAFE' };
+  const [showAiContext, setShowAiContext] =useState(false);
 
 async function handleLike() {
   try {
@@ -92,9 +93,6 @@ async function handleLike() {
     console.error(err);
    }
   }
-
-  // --- DISLIKE BUTTON LOGIC ---
-  // Mirror of like logic, but for dislikes
   async function handleDislike() {
   try {
     const res = await fetch(
@@ -216,6 +214,54 @@ async function handleAddComment(text) {
       {/* Question text */}
       <p className={styles.questionText}>{question.text}</p>
 
+      {question.aiContext && (
+       <div className={styles.aiContextSection}>
+         <button
+         type="button"
+         className={styles.aiContextToggle}
+         onClick={() =>
+         setShowAiContext((current) => !current)
+         }
+         aria-expanded={showAiContext}
+         >
+      <span className={styles.aiContextToggleLeft}>
+        <span className={styles.aiContextSparkle}>
+          ✨
+        </span>
+
+        <span>
+          <strong>AI Context Available</strong>
+          <small>
+            Extracted from the attached source
+          </small>
+        </span>
+      </span>
+
+      <span
+        className={`${styles.aiContextChevron} ${
+          showAiContext
+            ? styles.aiContextChevronOpen
+            : ""
+        }`}
+      >
+        ›
+      </span>
+    </button>
+
+    {showAiContext && (
+      <div className={styles.aiContextContent}>
+        <div className={styles.aiContextContentHeader}>
+          <span>AI-extracted context</span>
+          <span>
+            {question.aiContext.length} characters
+          </span>
+        </div>
+
+        <p>{question.aiContext}</p>
+      </div>
+    )}
+  </div>
+)}
       {/* Vote bar — updates live as likes/dislikes change */}
       <div className={styles.voteBarWrap} aria-hidden="true">
         <div

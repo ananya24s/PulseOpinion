@@ -27,7 +27,7 @@ async function getQuestions(req, res) {
 
 async function createQuestion(req, res) {
   try {
-    const { text, category } = req.body;
+   const {text,category, aiContext,} = req.body;
     const trimmedText = text?.trim();
 
     if (!trimmedText) {
@@ -70,12 +70,13 @@ async function createQuestion(req, res) {
       : null;
 
     const question =
-      await questionModel.createQuestion({
-        text: trimmedText,
-        category,
-        userId: req.user.id,
-        attachment,
-      });
+     await questionModel.createQuestion({
+     text: trimmedText,
+     category,
+     userId: req.user.id,
+     aiContext: aiContext?.trim() || null,
+     attachment,
+    });
 
     return res.status(201).json({
       success: true,

@@ -4,6 +4,7 @@ async function fetchQuestionWithComments(id) {
     `SELECT
        id,
        question_text  AS text,
+       ai_context AS aiContext,
        author,
        category,
        likes,
@@ -36,6 +37,7 @@ async function getAllQuestions(userId) {
        id,
        user_id        AS userId,
        question_text  AS text,
+       ai_context AS aiContext,
        author,
        category,
        likes,
@@ -128,10 +130,12 @@ async function deleteQuestion(questionId, userId) {
 
   return 'deleted';
 }
+
 async function createQuestion({
   text,
   category,
   userId,
+  aiContext = null,
   attachment = null,
 }) {
   const connection = await pool.getConnection();
@@ -139,10 +143,11 @@ async function createQuestion({
   try {
     await connection.beginTransaction();
 
-    const [userRows] = await connection.execute(
-      `SELECT name FROM users WHERE id = ?`,
-      [userId]
-    );
+    const [userRows] =
+      await connection.execute(
+        `SELECT name FROM users WHERE id = ?`,
+        [userId]
+      );
 
     if (userRows.length === 0) {
       throw new Error("User not found");
@@ -150,17 +155,25 @@ async function createQuestion({
 
     const author = userRows[0].name;
 
-    const [result] = await connection.execute(
-      `INSERT INTO questions
-        (author, user_id, question_text, category)
-       VALUES (?, ?, ?, ?)`,
-      [
-        author,
-        userId,
-        text.trim(),
-        category ?? "General",
-      ]
-    );
+    const [result] =
+      await connection.execute(
+        `INSERT INTO questions
+          (
+            author,
+            user_id,
+            question_text,
+            ai_context,
+            category
+          )
+         VALUES (?, ?, ?, ?, ?)`,
+        [
+          author,
+          userId,
+          text.trim(),
+          aiContext?.trim() || null,
+          category ?? "General",
+        ]
+      );
 
     if (attachment) {
       await connection.execute(
@@ -197,6 +210,7 @@ async function createQuestion({
     connection.release();
   }
 }
+
 async function handleVote(questionId, userId, voteType) {
   const connection = await pool.getConnection();
 
