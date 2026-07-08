@@ -1,12 +1,13 @@
+const questionUpload = require("../middleware/questionUpload");
 const express    = require('express');
 const router     = express.Router();
 const controller = require('../controllers/questionController');
 const { authenticate, optionalAuthenticate,} = require('../middleware/authmiddleware');
-//fetching all questions
 router.get('/', optionalAuthenticate,controller.getQuestions);
-router.post("/", authenticate, controller.createQuestion);
 router.patch('/:id/like', authenticate, controller.likeQuestion);
 router.patch('/:id/dislike', authenticate, controller.dislikeQuestion);
 router.post('/:id/comments', authenticate, controller.addComment);
 router.delete('/:id', authenticate, controller.deleteQuestion);
+router.post("/analyze-attachment",authenticate,questionUpload.single("attachment"), controller.analyzeAttachment);
+router.post("/", authenticate, questionUpload.single("attachment"),controller.createQuestion);
 module.exports = router;

@@ -13,13 +13,8 @@ async function fetchQuestionWithComments(id) {
      WHERE id = ?`,
     [id]
   );
-
-  // No row found — signal this to the controller so it can return 404
   if (questionRows.length === 0) return null;
-
   const question = questionRows[0];
-
-  // Fetch all comments for this question, oldest first so they read naturally
   const [commentRows] = await pool.execute(
     `SELECT
        id,
@@ -36,7 +31,6 @@ async function fetchQuestionWithComments(id) {
   return question;
 }
 async function getAllQuestions(userId) {
-  // 1. Fetch all questions
   const [questionRows] = await pool.execute(
     `SELECT
        id,
@@ -53,13 +47,10 @@ async function getAllQuestions(userId) {
 
   if (questionRows.length === 0) return [];
 
-  // 2. Collect question IDs
   const ids = questionRows.map((q) => q.id);
 
-  // 3. Build safe placeholders: ?, ?, ?
   const placeholders = ids.map(() => '?').join(',');
 
-  // 4. Fetch comments for all questions
   const [commentRows] = await pool.execute(
     `SELECT
        id,
@@ -73,7 +64,6 @@ async function getAllQuestions(userId) {
     ids
   );
 
-  // 5. Group comments by question
   const commentsByQuestion = new Map();
 
   for (const comment of commentRows) {
@@ -89,7 +79,6 @@ async function getAllQuestions(userId) {
     });
   }
 
-  // 6. Fetch logged-in user's votes
   let votesByQuestion = new Map();
 
   if (userId) {
@@ -108,77 +97,13 @@ async function getAllQuestions(userId) {
     );
   }
 
-  // 7. Return complete questions
   return questionRows.map((q) => ({
     ...q,
     userVote: votesByQuestion.get(q.id) ?? null,
     comments: commentsByQuestion.get(q.id) ?? [],
   }));
 }
-// async function getAllQuestions(userId) {
-// const placeholders = ids.map(() => '?').join(',');
 
-// const [commentRows] = await pool.execute(
-//   `SELECT
-//      id,
-//      question_id,
-//      comment_text AS text,
-//      author,
-//      created_at AS createdAt
-//    FROM comments
-//    WHERE question_id IN (${placeholders})
-//    ORDER BY created_at ASC`,
-//   ids
-// );
- 
-//   if (questionRows.length === 0) return [];
-//   const ids = questionRows.map((q) => q.id);
-//   const [commentRows] = await pool.execute(
-//     `SELECT
-//        id,
-//        question_id,
-//        comment_text  AS text,
-//        author,
-//        created_at    AS createdAt
-//      FROM comments
-//      WHERE question_id IN (?)
-//      ORDER BY created_at ASC`,
-//     [ids]
-//   );
-
-//   // Group comments by question_id into a Map for O(1) lookup
-//   const commentsByQuestion = new Map();
-//   for (const comment of commentRows) {
-//     if (!commentsByQuestion.has(comment.question_id)) {
-//       commentsByQuestion.set(comment.question_id, []);
-//     }
-//     commentsByQuestion.get(comment.question_id).push({
-//       id:        comment.id,
-//       text:      comment.text,
-//       author:    comment.author,
-//       createdAt: comment.createdAt,
-//     });
-//   }
-//   let votesByQuestion = new Map();
-
-//   if (userId) {
-//    const [voteRows] = await pool.execute(
-//     `SELECT question_id, vote_type
-//      FROM votes
-//      WHERE user_id = ?`,
-//     [userId]
-//    );
-
-//    votesByQuestion = new Map(
-//     voteRows.map((v) => [v.question_id, v.vote_type])
-//   );
-//  }
-//   return questionRows.map((q) => ({
-//   ...q,
-//   userVote: votesByQuestion.get(q.id) ?? null,
-//   comments: commentsByQuestion.get(q.id) ?? [],
-//   }));
-// }
 async function deleteQuestion(questionId, userId) {
   const [rows] = await pool.execute(
     `SELECT user_id
@@ -203,30 +128,75 @@ async function deleteQuestion(questionId, userId) {
 
   return 'deleted';
 }
-async function createQuestion({ text, category, userId }) {
-  const [userRows] = await pool.execute(
-    `SELECT name FROM users WHERE id = ?`,
-    [userId]
-  );
+async function createQuestion({
+  text,
+  category,
+  userId,
+  attachment = null,
+}) {
+  const connection = await pool.getConnection();
 
-  if (userRows.length === 0) {
-    throw new Error("User not found");
+  try {
+    await connection.beginTransaction();
+
+    const [userRows] = await connection.execute(
+      `SELECT name FROM users WHERE id = ?`,
+      [userId]
+    );
+
+    if (userRows.length === 0) {
+      throw new Error("User not found");
+    }
+
+    const author = userRows[0].name;
+
+    const [result] = await connection.execute(
+      `INSERT INTO questions
+        (author, user_id, question_text, category)
+       VALUES (?, ?, ?, ?)`,
+      [
+        author,
+        userId,
+        text.trim(),
+        category ?? "General",
+      ]
+    );
+
+    if (attachment) {
+      await connection.execute(
+        `INSERT INTO question_attachments
+          (
+            question_id,
+            original_name,
+            stored_name,
+            mime_type,
+            file_size,
+            file_path
+          )
+         VALUES (?, ?, ?, ?, ?, ?)`,
+        [
+          result.insertId,
+          attachment.originalName,
+          attachment.storedName,
+          attachment.mimeType,
+          attachment.fileSize,
+          attachment.filePath,
+        ]
+      );
+    }
+
+    await connection.commit();
+
+    return fetchQuestionWithComments(
+      result.insertId
+    );
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
   }
-
-  const author = userRows[0].name;
-
-  const [result] = await pool.execute(
-    `INSERT INTO questions (author, user_id, question_text, category)
-     VALUES (?, ?, ?, ?)`,
-    [author, userId, text.trim(), category ?? "General"]
-  );
-
-  return fetchQuestionWithComments(result.insertId);
 }
-
-// ── VOTE ──────────────────────────────────────────────────────────────────────
-
-// Atomically increments likes by 1 using SQL arithmetic — no read-then-write race.
 async function handleVote(questionId, userId, voteType) {
   const connection = await pool.getConnection();
 
@@ -251,7 +221,6 @@ async function handleVote(questionId, userId, voteType) {
 
     const existingVote = votes[0]?.vote_type;
 
-    // No previous vote → add vote
     if (!existingVote) {
       await connection.execute(
         `INSERT INTO votes (user_id, question_id, vote_type)
@@ -267,7 +236,6 @@ async function handleVote(questionId, userId, voteType) {
       );
     }
 
-    // Same vote clicked again → undo
     else if (existingVote === voteType) {
       await connection.execute(
         `DELETE FROM votes

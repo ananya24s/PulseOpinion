@@ -22,3 +22,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Local uploaded files
+server/uploads/*
+!server/uploads/.gitkeep

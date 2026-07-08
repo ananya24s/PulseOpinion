@@ -253,53 +253,65 @@ const [theme, setTheme] = useState(() => {
   }
 
   async function handleAddQuestion(
-    text,
-    category
+  text,
+  category,
+  attachment = null
   ) {
-    if (!token) {
-      setShowSignIn(true);
-      return;
-    }
+   if (!token) {
+    setShowSignIn(true);
+    throw new Error(
+      "Please sign in to ask a question."
+    );
+   }
 
-    try {
-      const res = await fetch(
-        `${API_BASE}/questions`,
-        {
-          method: "POST",
+   const formData = new FormData();
 
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
+   formData.append("text", text);
+   formData.append("category", category);
 
-          body: JSON.stringify({
-            text,
-            category,
-          }),
-        }
-      );
+   if (attachment) {
+     formData.append(
+      "attachment",
+      attachment
+    );
+   }
 
-      const json = await res.json();
+   try {
+    const res = await fetch(
+      `${API_BASE}/questions`,
+      {
+        method: "POST",
 
-      if (!res.ok) {
-        throw new Error(
-          json.message ||
-            `Server error: ${res.status}`
-        );
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+
+        body: formData,
       }
+    );
 
-      setQuestions((previousQuestions) => [
-        normaliseQuestion(json.data),
-        ...previousQuestions,
-      ]);
-    } catch (err) {
-      alert(
-        err.message ||
-          "Failed to post question. Please check your connection and try again."
+    const json = await res.json();
+
+    if (!res.ok) {
+      throw new Error(
+        json.message ||
+          `Server error: ${res.status}`
       );
     }
-  }
 
+    setQuestions((previousQuestions) => [
+      normaliseQuestion(json.data),
+      ...previousQuestions,
+    ]);
+
+    return json.data;
+  } catch (err) {
+    throw new Error(
+      err.message ||
+        "Failed to post question. Please check your connection and try again."
+    );
+  }
+ }
   async function handleDeleteQuestion(
     questionId
   ) {

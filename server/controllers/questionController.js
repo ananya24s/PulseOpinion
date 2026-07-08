@@ -1,5 +1,20 @@
+const fs = require("fs/promises");
+const {analyzeAttachment: analyzeAttachmentWithAI,} = require("../services/attachmentAnalysisService");
 const questionModel = require('../models/questionModel');
+async function removeUploadedFile(file) {
+  if (!file?.path) {
+    return;
+  }
 
+  try {
+    await fs.unlink(file.path);
+  } catch (error) {
+    console.error(
+      "Failed to clean up uploaded file:",
+      error
+    );
+  }
+}
 async function getQuestions(req, res) {
   try {
     const questions = await questionModel.getAllQuestions(req.user?.id);
@@ -9,37 +24,75 @@ async function getQuestions(req, res) {
    res.status(500).json({success: false,message: "Failed to fetch questions." });
   }
 }
+
 async function createQuestion(req, res) {
   try {
     const { text, category } = req.body;
+    const trimmedText = text?.trim();
 
-    if (!text || !text.trim()) {
+    if (!trimmedText) {
+      await removeUploadedFile(req.file);
+
       return res.status(400).json({
         success: false,
         message: "Question text is required.",
       });
     }
 
-    if (text.trim().length < 10) {
+    if (trimmedText.length < 10) {
+      await removeUploadedFile(req.file);
+
       return res.status(400).json({
         success: false,
-        message: 'Question text must be at least 10 characters.',
+        message:
+          "Question text must be at least 10 characters.",
       });
     }
 
-    if (text.trim().length > 250) {
+    if (trimmedText.length > 250) {
+      await removeUploadedFile(req.file);
+
       return res.status(400).json({
         success: false,
-        message: 'Question text must be 250 characters or fewer.',
+        message:
+          "Question text must be 250 characters or fewer.",
       });
     }
 
-    const question = await questionModel.createQuestion({text,category,userId: req.user.id,});
-    res.status(201).json({ success: true, data: question });
+    const attachment = req.file
+      ? {
+          originalName: req.file.originalname,
+          storedName: req.file.filename,
+          mimeType: req.file.mimetype,
+          fileSize: req.file.size,
+          filePath: `uploads/questions/${req.file.filename}`,
+        }
+      : null;
+
+    const question =
+      await questionModel.createQuestion({
+        text: trimmedText,
+        category,
+        userId: req.user.id,
+        attachment,
+      });
+
+    return res.status(201).json({
+      success: true,
+      data: question,
+    });
   } catch (err) {
-    res.status(500).json({ success: false, message: 'Failed to create question.' });
+    await removeUploadedFile(req.file);
+
+    console.error("Create question error:", err);
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to create question.",
+    });
   }
 }
+
 async function likeQuestion(req, res) {
   try {
     const id = Number(req.params.id);
@@ -150,18 +203,47 @@ async function deleteQuestion(req, res) {
     });
   }
 }
+async function analyzeAttachment(req, res) {
+  if (!req.file) {
+    return res.status(400).json({
+      success: false,
+      message: "Attachment is required.",
+    });
+  }
+
+  try {
+    const extractedText =
+      await analyzeAttachmentWithAI(req.file);
+
+    await removeUploadedFile(req.file);
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        extractedText,
+      },
+    });
+  } catch (error) {
+    await removeUploadedFile(req.file);
+
+    console.error(
+      "Attachment analysis error:",
+      error
+    );
+
+    return res.status(500).json({
+      success: false,
+      message:
+        "Could not analyze attachment.",
+    });
+  }
+}
 module.exports = {
   getQuestions,
   createQuestion,
+  analyzeAttachment,
   likeQuestion,
   dislikeQuestion,
   addComment,
   deleteQuestion,
 };
-// module.exports = {
-//   getQuestions,
-//   createQuestion,
-//   likeQuestion,
-//   dislikeQuestion,
-//   addComment,
-// };
