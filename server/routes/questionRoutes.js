@@ -8,6 +8,6 @@ router.patch('/:id/like', authenticate, controller.likeQuestion);
 router.patch('/:id/dislike', authenticate, controller.dislikeQuestion);
 router.post('/:id/comments', authenticate, controller.addComment);
 router.delete('/:id', authenticate, controller.deleteQuestion);
-router.post("/analyze-attachment",authenticate,questionUpload.single("attachment"), controller.analyzeAttachment);
+router.post("/analyze-attachment",authenticate,questionUpload.single("attachment"), controller.analyzeAttachment);router.post("/:id/verify",authenticate,controller.verifyQuestion);
 router.post("/", authenticate, questionUpload.single("attachment"),controller.createQuestion);
 module.exports = router;

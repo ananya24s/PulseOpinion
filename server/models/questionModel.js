@@ -33,18 +33,29 @@ async function fetchQuestionWithComments(id) {
 }
 async function getAllQuestions(userId) {
   const [questionRows] = await pool.execute(
-    `SELECT
-       id,
-       user_id        AS userId,
-       question_text  AS text,
-       ai_context AS aiContext,
-       author,
-       category,
-       likes,
-       dislikes,
-       created_at     AS createdAt
-     FROM questions
-     ORDER BY created_at DESC`
+  `SELECT
+   q.id,
+   q.user_id AS userId,
+   q.question_text AS text,
+   q.ai_context AS aiContext,
+   q.author,
+   q.category,
+   q.likes,
+   q.dislikes,
+   q.created_at AS createdAt,
+
+   v.discussion_type AS verificationType,
+   v.confidence_score AS verificationScore,
+   v.verdict AS verificationVerdict,
+   v.explanation AS verificationExplanation,
+   v.analyzed_at AS verificationAnalyzedAt
+
+   FROM questions q
+
+   LEFT JOIN question_verifications v
+   ON v.question_id = q.id
+
+  ORDER BY q.created_at DESC`
   );
 
   if (questionRows.length === 0) return [];
@@ -339,10 +350,97 @@ async function addComment(questionId, { text, userId }) {
 
   return fetchQuestionWithComments(questionId);
 }
+async function getDiscussionForVerification(
+  questionId
+) {
+  const [questionRows] = await pool.execute(
+    `SELECT
+       id,
+       question_text AS text,
+       ai_context AS aiContext
+     FROM questions
+     WHERE id = ?`,
+    [questionId]
+  );
 
+  if (questionRows.length === 0) {
+    return null;
+  }
+
+  const [commentRows] = await pool.execute(
+    `SELECT
+       id,
+       comment_text AS text,
+       author,
+       created_at AS createdAt
+     FROM comments
+     WHERE question_id = ?
+     ORDER BY created_at ASC`,
+    [questionId]
+  );
+
+  return {
+    ...questionRows[0],
+    comments: commentRows,
+  };
+}
+
+async function upsertVerification(
+  questionId,
+  {
+    discussionType,
+    confidenceScore,
+    verdict,
+    explanation,
+  }
+) {
+  await pool.execute(
+    `INSERT INTO question_verifications
+      (
+        question_id,
+        discussion_type,
+        confidence_score,
+        verdict,
+        explanation,
+        analyzed_at
+      )
+     VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+     ON DUPLICATE KEY UPDATE
+       discussion_type = VALUES(discussion_type),
+       confidence_score = VALUES(confidence_score),
+       verdict = VALUES(verdict),
+       explanation = VALUES(explanation),
+       analyzed_at = CURRENT_TIMESTAMP`,
+    [
+      questionId,
+      discussionType,
+      confidenceScore,
+      verdict,
+      explanation,
+    ]
+  );
+
+  const [rows] = await pool.execute(
+    `SELECT
+       question_id AS questionId,
+       discussion_type AS discussionType,
+       confidence_score AS confidenceScore,
+       verdict,
+       explanation,
+       analyzed_at AS analyzedAt,
+       updated_at AS updatedAt
+     FROM question_verifications
+     WHERE question_id = ?`,
+    [questionId]
+  );
+
+  return rows[0] || null;
+}
 module.exports = {
   getAllQuestions,
-  getQuestionById: fetchQuestionWithComments,/*kept for any future controller use*/
+  getQuestionById: fetchQuestionWithComments,
+  getDiscussionForVerification,
+  upsertVerification,
   createQuestion,
   likeQuestion,
   dislikeQuestion,

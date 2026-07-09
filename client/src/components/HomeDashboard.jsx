@@ -41,7 +41,7 @@ export default function HomeDashboard({
         </aside>
 
         <main className={styles.feedColumn}>
-          <div className={styles.feedIntro}>
+          {/* <div className={styles.feedIntro}>
             <h1 className={styles.feedHeading}>
               What&apos;s on your <span>mind?</span>
             </h1>
@@ -50,7 +50,18 @@ export default function HomeDashboard({
               Ask questions, spark debates, and discover what
               the public really thinks.
             </p>
-          </div>
+          </div> */}
+
+          <div className={styles.feedIntro}>
+  <h1 className={styles.feedHeading}>
+    Discuss with <span>context.</span>
+  </h1>
+
+  <p className={styles.feedSubtitle}>
+    Ask questions, attach sources, and explore discussions
+    shaped by community perspectives and AI-assisted context.
+  </p>
+</div>
 
           <QuestionForm onSubmit={onAddQuestion} />
 

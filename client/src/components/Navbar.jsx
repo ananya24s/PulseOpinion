@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import styles from "./Navbar.module.css";
 
 function ThemeIcon({ theme }) {
@@ -57,6 +57,37 @@ export default function Navbar({
   onHomeClick,
 }) {
   const [showMenu, setShowMenu] = useState(false);
+  const userMenuRef = useRef(null);
+
+useEffect(() => {
+  if (!showMenu) return;
+
+  function handleClickOutside(event) {
+    if (
+      userMenuRef.current &&
+      !userMenuRef.current.contains(event.target)
+    ) {
+      setShowMenu(false);
+    }
+  }
+
+  function handleEscape(event) {
+    if (event.key === "Escape") {
+      setShowMenu(false);
+    }
+  }
+
+  document.addEventListener("mousedown", handleClickOutside);
+  window.addEventListener("keydown", handleEscape);
+
+  return () => {
+    document.removeEventListener(
+      "mousedown",
+      handleClickOutside
+    );
+    window.removeEventListener("keydown", handleEscape);
+  };
+}, [showMenu]);
 
   function handleMenuAction(action) {
     setShowMenu(false);
@@ -145,7 +176,10 @@ export default function Navbar({
         </button>
 
         {user ? (
-          <div className={styles.userMenu}>
+<div
+  className={styles.userMenu}
+  ref={userMenuRef}
+>
             <button
               type="button"
               className={styles.userProfile}

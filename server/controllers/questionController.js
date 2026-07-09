@@ -1,6 +1,7 @@
 const fs = require("fs/promises");
 const {analyzeAttachment: analyzeAttachmentWithAI,} = require("../services/attachmentAnalysisService");
 const questionModel = require('../models/questionModel');
+const {analyzeDiscussion,} = require("../services/verificationService");
 async function removeUploadedFile(file) {
   if (!file?.path) {
     return;
@@ -239,6 +240,58 @@ async function analyzeAttachment(req, res) {
     });
   }
 }
+async function verifyQuestion(req, res) {
+  try {
+    const id = Number(req.params.id);
+
+    if (!Number.isInteger(id) || id <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid question ID.",
+      });
+    }
+
+    const discussion =
+      await questionModel.getDiscussionForVerification(
+        id
+      );
+
+    if (!discussion) {
+      return res.status(404).json({
+        success: false,
+        message: "Question not found.",
+      });
+    }
+
+    const assessment = await analyzeDiscussion({
+      question: discussion.text,
+      aiContext: discussion.aiContext,
+      comments: discussion.comments ?? [],
+    });
+
+    const verification =
+      await questionModel.upsertVerification(
+        id,
+        assessment
+      );
+
+    return res.status(200).json({
+      success: true,
+      data: verification,
+    });
+  } catch (err) {
+    console.error(
+      "Verify question error:",
+      err
+    );
+
+    return res.status(500).json({
+      success: false,
+      message:
+        "Failed to verify question.",
+    });
+  }
+}
 module.exports = {
   getQuestions,
   createQuestion,
@@ -247,4 +300,5 @@ module.exports = {
   dislikeQuestion,
   addComment,
   deleteQuestion,
+  verifyQuestion,
 };

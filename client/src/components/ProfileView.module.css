@@ -1,109 +1,225 @@
 .profile {
-  padding: 32px 0 60px;
+  width: 100%;
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 32px 20px 64px;
 }
 
 .backBtn {
-  border: none;
+  display: inline-flex;
+  align-items: center;
+
+  margin: 0 0 20px;
+  padding: 0;
+
+  border: 0;
   background: transparent;
-  color: var(--primary);
+
+  color: var(--accent);
+
   font: inherit;
   font-size: 14px;
+  font-weight: 700;
+
   cursor: pointer;
-  margin-bottom: 20px;
-  padding: 0;
+}
+
+.backBtn:hover {
+  color: var(--primary);
+}
+
+.profileCard,
+.statCard,
+.infoCard {
+  border: 1px solid var(--border-color);
+  background: var(--bg-surface);
+  color: var(--text-primary);
+
+  box-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.04),
+    0 12px 30px rgba(15, 23, 42, 0.08);
 }
 
 .profileCard {
   display: flex;
   align-items: center;
   gap: 18px;
-  background: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 16px;
+
   padding: 24px;
-  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.05);
+
+  border-radius: 18px;
 }
 
 .avatar {
-  width: 64px;
-  height: 64px;
+  display: grid;
+  place-items: center;
+
+  width: 72px;
+  height: 72px;
+
+  flex: 0 0 72px;
+
   border-radius: 50%;
-  background: var(--accent);
-  color: var(--primary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 26px;
-  font-weight: 700;
+
+  background:
+    linear-gradient(
+      135deg,
+      var(--primary),
+      var(--accent)
+    );
+
+  color: #ffffff;
+
+  font-size: 28px;
+  font-weight: 850;
 }
 
 .profileCard h1 {
   margin: 0 0 5px;
-  font-size: 24px;
+
+  color: var(--text-primary);
+
+  font-size: 26px;
+  font-weight: 850;
+  letter-spacing: -0.03em;
 }
 
 .profileCard p {
   margin: 0;
-  color: #6b7280;
+
+  color: var(--text-secondary);
+
+  font-size: 14px;
 }
 
 .stats {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 14px;
+
   margin-top: 20px;
 }
 
 .statCard {
-  background: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 14px;
-  padding: 20px;
   display: flex;
   flex-direction: column;
   gap: 6px;
+
+  min-height: 118px;
+  padding: 20px;
+
+  border-radius: 16px;
 }
 
 .statCard strong {
-  font-size: 26px;
-  color: var(--primary);
+  color: var(--accent);
+
+  font-size: 28px;
+  font-weight: 850;
+  line-height: 1;
 }
 
 .statCard span {
-  color: #6b7280;
+  color: var(--text-secondary);
+
   font-size: 13px;
+  line-height: 1.35;
 }
 
 .infoCard {
   margin-top: 20px;
-  background: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 14px;
-  padding: 22px;
+  padding: 24px;
+
+  border-radius: 16px;
 }
 
 .infoCard h2 {
   margin: 0 0 18px;
+
+  color: var(--text-primary);
+
   font-size: 18px;
+  font-weight: 800;
 }
 
 .infoRow {
   display: flex;
+  align-items: center;
   justify-content: space-between;
-  padding: 12px 0;
-  border-top: 1px solid #f1f5f9;
+  gap: 18px;
+
+  padding: 13px 0;
+
+  border-top: 1px solid var(--border-soft);
 }
 
 .infoRow span {
-  color: #6b7280;
+  color: var(--text-secondary);
+
+  font-size: 14px;
 }
 
-@media (max-width: 700px) {
+.infoRow strong {
+  min-width: 0;
+
+  overflow: hidden;
+
+  color: var(--text-primary);
+
+  font-size: 14px;
+  font-weight: 750;
+
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+:global(:root[data-theme="dark"]) .profileCard,
+:global(:root[data-theme="dark"]) .statCard,
+:global(:root[data-theme="dark"]) .infoCard {
+  background: #182235;
+  border-color: #2b3950;
+
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.18),
+    0 18px 40px rgba(0, 0, 0, 0.18);
+}
+
+@media (max-width: 800px) {
   .stats {
     grid-template-columns: repeat(2, 1fr);
   }
+}
+
+@media (max-width: 560px) {
+  .profile {
+    padding: 24px 14px 48px;
+  }
 
   .profileCard {
+    align-items: flex-start;
     padding: 18px;
+  }
+
+  .avatar {
+    width: 58px;
+    height: 58px;
+    flex-basis: 58px;
+
+    font-size: 23px;
+  }
+
+  .stats {
+    grid-template-columns: 1fr;
+  }
+
+  .infoRow {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .infoRow strong {
+    text-align: left;
   }
 }

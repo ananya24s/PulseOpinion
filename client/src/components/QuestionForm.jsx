@@ -25,7 +25,7 @@ const ALLOWED_TYPES = [
   "application/pdf",
 ];
 
-const API_BASE = "http://localhost:5001/api";
+const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 export default function QuestionForm({
   onSubmit,
@@ -73,9 +73,9 @@ export default function QuestionForm({
   }, [attachment]);
 
   async function analyzeFile(file) {
-    const token = localStorage.getItem(
-      "pulseToken"
-    );
+    const token =
+  localStorage.getItem("pulseToken") ||
+  sessionStorage.getItem("pulseToken");
 
     if (!token) {
       throw new Error(
