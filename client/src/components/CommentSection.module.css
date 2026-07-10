@@ -98,7 +98,7 @@
   padding: 9px 14px;
   font-size: 13px;
   color: var(--text-primary);
-  background: #fff;
+  background: var(--card);
   outline: none;
   transition: border-color 0.18s;
 }
