@@ -138,8 +138,11 @@ async function addComment(req, res) {
   try {
     const id = Number(req.params.id);
 
-    if (isNaN(id)) {
-      return res.status(400).json({ success: false, message: 'Invalid question ID.' });
+    if (!Number.isInteger(id) || id <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid question ID.",
+      });
     }
 
     const { text } = req.body;
@@ -147,21 +150,62 @@ async function addComment(req, res) {
     if (!text || !text.trim()) {
       return res.status(400).json({
         success: false,
-        message: 'Comment text is required.',
+        message: "Comment text is required.",
       });
     }
-    const question = await questionModel.addComment(id, {text,userId: req.user.id,});
-    
+
+    const question = await questionModel.addComment(id, {
+      text: text.trim(),
+      userId: req.user.id,
+    });
 
     if (!question) {
-      return res.status(404).json({ success: false, message: 'Question not found.' });
+      return res.status(404).json({
+        success: false,
+        message: "Question not found.",
+      });
     }
 
-    res.status(201).json({ success: true, data: question });
+    try {
+      const discussion =
+        await questionModel.getDiscussionForVerification(id);
+
+      if (discussion) {
+        const assessment = await analyzeDiscussion({
+          question: discussion.text,
+          aiContext: discussion.aiContext,
+          comments: discussion.comments ?? [],
+        });
+
+        await questionModel.upsertVerification(
+          id,
+          assessment
+        );
+      }
+    } catch (verificationError) {
+      console.error(
+        "Automatic verification refresh failed:",
+        verificationError
+      );
+    }
+
+    const updatedQuestion =
+      await questionModel.getQuestionById(id);
+
+    return res.status(201).json({
+      success: true,
+      data: updatedQuestion,
+    });
   } catch (err) {
-    res.status(500).json({ success: false, message: 'Failed to add comment.' });
+    console.error("Add comment error:", err);
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to add comment.",
+    });
   }
 }
+
 async function deleteQuestion(req, res) {
   try {
     const id = Number(req.params.id);
