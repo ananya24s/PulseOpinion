@@ -2,7 +2,7 @@ const questionUpload = require("../middleware/questionUpload");
 const express    = require('express');
 const router     = express.Router();
 const controller = require('../controllers/questionController');
-const { authenticate, optionalAuthenticate,} = require('../middleware/authmiddleware');
+const { authenticate, optionalAuthenticate,} = require('../middleware/authMiddleware');
 router.get('/', optionalAuthenticate,controller.getQuestions);
 router.patch('/:id/like', authenticate, controller.likeQuestion);
 router.patch('/:id/dislike', authenticate, controller.dislikeQuestion);
