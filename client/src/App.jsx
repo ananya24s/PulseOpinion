@@ -252,12 +252,12 @@ const [theme, setTheme] = useState(() => {
     }
   }
 
-  async function handleAddQuestion(
+async function handleAddQuestion(
   text,
   category,
   attachment = null,
-  aiContext=""
-  ) {
+  aiContext = ""
+){
    if (!token) {
     setShowSignIn(true);
     throw new Error(
@@ -269,12 +269,15 @@ const [theme, setTheme] = useState(() => {
 
    formData.append("text", text);
    formData.append("category", category);
-   if (aiContext.trim()) {
-   formData.append(
+if (
+  typeof aiContext === "string" &&
+  aiContext.trim()
+) {
+  formData.append(
     "aiContext",
     aiContext.trim()
-   );
-  }
+  );
+}
 
    if (attachment) {
      formData.append(
@@ -284,8 +287,13 @@ const [theme, setTheme] = useState(() => {
    }
 
    try {
-    const res = await fetch(
-      `${API_BASE}/questions`,
+    const endpoint = attachment
+  ? `${API_BASE}/questions/bulk-upload`
+  : `${API_BASE}/questions`;
+
+const res = await fetch(endpoint, 
+    // const res = await fetch(
+    //   `${API_BASE}/questions`,
       {
         method: "POST",
 
@@ -306,10 +314,18 @@ const [theme, setTheme] = useState(() => {
       );
     }
 
-    setQuestions((previousQuestions) => [
-      normaliseQuestion(json.data),
-      ...previousQuestions,
-    ]);
+if (Array.isArray(json.data)) {
+  setQuestions((previous) => [
+    ...json.data.map(normaliseQuestion),
+    ...previous,
+  ]);
+  alert(`${json.created} questions imported successfully!`);
+} else {
+  setQuestions((previous) => [
+    normaliseQuestion(json.data),
+    ...previous,
+  ]);
+}
 
     return json.data;
   } catch (err) {

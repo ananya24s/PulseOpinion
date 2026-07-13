@@ -17,7 +17,6 @@ export const CATEGORIES = [
 
 const MAX_CHARS = 250;
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
-
 const ALLOWED_TYPES = [
   "image/jpeg",
   "image/png",
@@ -25,24 +24,39 @@ const ALLOWED_TYPES = [
   "application/pdf",
 ];
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL;
+const API_BASE =
+  import.meta.env.VITE_API_BASE_URL;
+
+function getAuthToken() {
+  return (
+    localStorage.getItem("pulseToken") ||
+    sessionStorage.getItem("pulseToken")
+  );
+}
 
 export default function QuestionForm({
   onSubmit,
 }) {
+  const [detectedQuestions, setDetectedQuestions] = useState([]);
   const [text, setText] = useState("");
   const [category, setCategory] =
     useState("General");
   const [error, setError] = useState("");
+
   const [attachment, setAttachment] =
     useState(null);
+
   const [previewUrl, setPreviewUrl] =
     useState("");
+
   const [isAnalyzing, setIsAnalyzing] =
     useState(false);
 
-  const [questions, setQuestions] =
-   useState([]);
+  const [aiContext, setAiContext] =
+    useState("");
+
+  const [importMessage, setImportMessage] =
+    useState("");
 
   const fileInputRef = useRef(null);
 
@@ -73,9 +87,7 @@ export default function QuestionForm({
   }, [attachment]);
 
   async function analyzeFile(file) {
-    const token =
-  localStorage.getItem("pulseToken") ||
-  sessionStorage.getItem("pulseToken");
+    const token = getAuthToken();
 
     if (!token) {
       throw new Error(
@@ -110,8 +122,86 @@ export default function QuestionForm({
     return json.data;
   }
 
+  async function importQuestions(
+    questions
+  ) {
+    const token = getAuthToken();
+
+    if (!token) {
+      throw new Error(
+        "Please sign in before importing questions."
+      );
+    }
+
+    const response = await fetch(
+      `${API_BASE}/questions/import`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type":
+            "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          questions,
+          category,
+        }),
+      }
+    );
+
+    const json = await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        json.message ||
+          "Could not import questions."
+      );
+    }
+
+    return json.data;
+  }
+async function handleImportQuestions() {
+  try {
+    setIsAnalyzing(true);
+
+    await importQuestions(detectedQuestions);
+
+    window.location.reload();
+  } catch (err) {
+    setError(err.message);
+  } finally {
+    setIsAnalyzing(false);
+  }
+}
+async function handleImportQuestions() {
+  try {
+    setIsAnalyzing(true);
+
+    await importQuestions(detectedQuestions);
+
+    setImportMessage(
+      `${detectedQuestions.length} questions imported successfully.`
+    );
+
+    setDetectedQuestions([]);
+    removeAttachment();
+
+    window.setTimeout(() => {
+      window.location.reload();
+    }, 700);
+
+  } catch (err) {
+    setError(
+      err.message ||
+      "Could not import questions."
+    );
+  } finally {
+    setIsAnalyzing(false);
+  }
+}
   async function handleFileChange(event) {
-    const file = event.target.files?.[0];
+    const file =
+      event.target.files?.[0];
 
     if (!file) {
       return;
@@ -137,39 +227,66 @@ export default function QuestionForm({
 
     setAttachment(file);
     setError("");
+    setImportMessage("");
     setIsAnalyzing(true);
 
     try {
       const result =
-       await analyzeFile(file);
+        await analyzeFile(file);
 
-      setQuestions(result.questions || []);
+      const extractedText =
+        typeof result?.extractedText ===
+        "string"
+          ? result.extractedText
+          : "";
+
+      const detectedQuestions =
+        Array.isArray(result?.questions)
+          ? result.questions
+              .map((question) =>
+                typeof question === "string"
+                  ? question.trim()
+                  : ""
+              )
+              .filter(
+                (question) =>
+                  question.length >= 10 &&
+                  question.length <= MAX_CHARS
+              )
+          : [];
+
+      setAiContext(extractedText);
+
+      if (detectedQuestions.length === 0) {
+        throw new Error(
+          "No valid questions were detected in this document."
+        );
+      }
+
+      
+      setDetectedQuestions(detectedQuestions);
+      setImportMessage(`${detectedQuestions.length} questions ready to import.`
+);
     } catch (analysisError) {
       setError(
         analysisError.message ||
-          "Could not analyze attachment."
+          "Could not analyze or import the attachment."
       );
     } finally {
       setIsAnalyzing(false);
     }
   }
+
   function removeAttachment() {
-   setAttachment(null);
-   setPreviewUrl("");
-   setAiContext("");
+    setAttachment(null);
+    setPreviewUrl("");
+    setAiContext("");
+    setImportMessage("");
 
-   if (fileInputRef.current) {
-    fileInputRef.current.value = "";
-   }
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
   }
-  // function removeAttachment() {
-  //   setAttachment(null);
-  //   setPreviewUrl("");
-
-  //   if (fileInputRef.current) {
-  //     fileInputRef.current.value = "";
-  //   }
-  // }
 
   async function handleSubmit() {
     const trimmed = text.trim();
@@ -197,7 +314,7 @@ export default function QuestionForm({
         trimmed,
         category,
         attachment,
-        questions
+        aiContext
       );
 
       setText("");
@@ -224,21 +341,17 @@ export default function QuestionForm({
       <textarea
         id="question-input"
         className={`${styles.textarea} ${
-          error ? styles.textareaError : ""
+          error
+            ? styles.textareaError
+            : ""
         } ${
           charCount > MAX_CHARS
             ? styles.textareaError
             : ""
         }`}
         placeholder="e.g. Will renewable energy replace fossil fuels by 2040?"
-        // placeholder={
-        //   isAnalyzing
-        //     ? "AI is analyzing your attachment..."
-        //     : "e.g. Will renewable energy replace fossil fuels by 2040?"
-        // }
         rows={5}
         value={text}
-        // disabled={isAnalyzing}
         onChange={(event) => {
           setText(event.target.value);
 
@@ -246,6 +359,7 @@ export default function QuestionForm({
             setError("");
           }
         }}
+        disabled={isAnalyzing}
       />
 
       <div className={styles.charRow}>
@@ -261,58 +375,154 @@ export default function QuestionForm({
       </div>
 
       {isAnalyzing && (
-        <div className={styles.analysisStatus}>
+        <div
+          className={
+            styles.analysisStatus
+          }
+        >
           <span
-            className={styles.analysisSpinner}
+            className={
+              styles.analysisSpinner
+            }
           />
 
           <span>
-            AI is analyzing your attachment…
+            {importMessage ||
+              "AI is analyzing your attachment…"}
           </span>
         </div>
       )}
 
-{questions.length > 0 && !isAnalyzing && (
-  <div className={styles.aiContextBox}>
-    <div className={styles.aiContextHeader}>
-      <div>
-        <span className={styles.aiContextTitle}>
-          ✨ AI detected {questions.length} questions
-        </span>
+      {importMessage &&
+        !isAnalyzing && (
+          <div
+            className={
+              styles.analysisStatus
+            }
+          >
+            <span>
+              {importMessage}
+            </span>
+          </div>
+        )}
 
-        <span className={styles.aiContextHint}>
-          These will be imported as separate discussions.
-        </span>
-      </div>
-    </div>
+      {aiContext &&
+        !isAnalyzing && (
+          <div
+            className={
+              styles.aiContextBox
+            }
+          >
+            <div
+              className={
+                styles.aiContextHeader
+              }
+            >
+              <div>
+                <span
+                  className={
+                    styles.aiContextTitle
+                  }
+                >
+                  ✨ AI-extracted context
+                </span>
 
-    <div className={styles.aiContextTextarea}>
-      {questions.map((question, index) => (
-        <div key={index} style={{ marginBottom: "12px" }}>
-          <strong>Q{index + 1}.</strong> {question}
+                <span
+                  className={
+                    styles.aiContextHint
+                  }
+                >
+                  Extracted from the uploaded
+                  document
+                </span>
+              </div>
+
+              <span
+                className={
+                  styles.aiContextCount
+                }
+              >
+                {aiContext.length} characters
+              </span>
+            </div>
+
+            <textarea
+              className={
+                styles.aiContextTextarea
+              }
+              value={aiContext}
+              rows={7}
+              readOnly
+              aria-label="AI extracted context"
+            />
+          </div>
+        )}
+{detectedQuestions.length > 0 && (
+  <div className={styles.questionPreview}>
+    <h4>
+      {detectedQuestions.length} questions detected
+    </h4>
+
+    <div className={styles.questionList}>
+      {detectedQuestions
+        .slice(0, 5)
+        .map((q, i) => (
+          <div
+            key={i}
+            className={styles.questionItem}
+          >
+            {q}
+          </div>
+        ))}
+
+      {detectedQuestions.length > 5 && (
+        <div className={styles.questionMore}>
+          +{detectedQuestions.length - 5} more...
         </div>
-      ))}
+      )}
     </div>
+
+    <button
+      className={styles.importBtn}
+      onClick={handleImportQuestions}
+    >
+      Import {detectedQuestions.length} Questions
+    </button>
   </div>
 )}
-
       {attachment && (
         <div
-          className={styles.attachmentPreview}
+          className={
+            styles.attachmentPreview
+          }
         >
           {previewUrl ? (
             <img
               src={previewUrl}
               alt="Attachment preview"
-              className={styles.previewImage}
+              className={
+                styles.previewImage
+              }
             />
           ) : (
-            <div className={styles.pdfPreview}>
-              <span className={styles.pdfIcon}>
+            <div
+              className={
+                styles.pdfPreview
+              }
+            >
+              <span
+                className={
+                  styles.pdfIcon
+                }
+              >
                 PDF
               </span>
 
-              <div className={styles.fileInfo}>
+              <div
+                className={
+                  styles.fileInfo
+                }
+              >
                 <strong>
                   {attachment.name}
                 </strong>
@@ -334,7 +544,9 @@ export default function QuestionForm({
             className={
               styles.removeAttachmentBtn
             }
-            onClick={removeAttachment}
+            onClick={
+              removeAttachment
+            }
             disabled={isAnalyzing}
             aria-label="Remove attachment"
           >
@@ -350,18 +562,27 @@ export default function QuestionForm({
       )}
 
       <div className={styles.footer}>
-        <div className={styles.footerLeft}>
+        <div
+          className={styles.footerLeft}
+        >
           <select
-            className={styles.categorySelect}
+            className={
+              styles.categorySelect
+            }
             value={category}
             disabled={isAnalyzing}
             onChange={(event) =>
-              setCategory(event.target.value)
+              setCategory(
+                event.target.value
+              )
             }
             aria-label="Select category"
           >
             {CATEGORIES.map((cat) => (
-              <option key={cat} value={cat}>
+              <option
+                key={cat}
+                value={cat}
+              >
                 {cat}
               </option>
             ))}
@@ -371,8 +592,12 @@ export default function QuestionForm({
             ref={fileInputRef}
             type="file"
             accept=".jpg,.jpeg,.png,.webp,.pdf"
-            className={styles.fileInput}
-            onChange={handleFileChange}
+            className={
+              styles.fileInput
+            }
+            onChange={
+              handleFileChange
+            }
           />
 
           <button
@@ -396,8 +621,8 @@ export default function QuestionForm({
             </svg>
 
             {isAnalyzing
-              ? "Analyzing..."
-              : "Attach"}
+             ? "Extracting Questions..."
+            : "Attach"}
           </button>
         </div>
 
@@ -424,7 +649,9 @@ export default function QuestionForm({
             <polygon points="22 2 15 22 11 13 2 9 22 2" />
           </svg>
 
-          Ask Question
+          {attachment
+  ? "Import Questions"
+  : "Ask Question"}
         </button>
       </div>
     </div>

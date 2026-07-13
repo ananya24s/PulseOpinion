@@ -9,5 +9,12 @@ router.patch('/:id/dislike', authenticate, controller.dislikeQuestion);
 router.post('/:id/comments', authenticate, controller.addComment);
 router.delete('/:id', authenticate, controller.deleteQuestion);
 router.post("/analyze-attachment",authenticate,questionUpload.single("attachment"), controller.analyzeAttachment);router.post("/:id/verify",authenticate,controller.verifyQuestion);
+router.post("/import",authenticate,controller.importQuestions);
+router.post(
+"/bulk-upload",
+authenticate,
+questionUpload.single("attachment"),
+controller.createQuestionsFromAttachment
+);
 router.post("/", authenticate, questionUpload.single("attachment"),controller.createQuestion);
 module.exports = router;

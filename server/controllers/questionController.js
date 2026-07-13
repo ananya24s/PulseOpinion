@@ -2,6 +2,9 @@ const fs = require("fs/promises");
 const {analyzeAttachment: analyzeAttachmentWithAI,} = require("../services/attachmentAnalysisService");
 const questionModel = require('../models/questionModel');
 const {analyzeDiscussion,} = require("../services/verificationService");
+const {
+  splitQuestions,
+} = require("../services/questionSplitter");
 async function removeUploadedFile(file) {
   if (!file?.path) {
     return;
@@ -262,13 +265,19 @@ async function analyzeAttachment(req, res) {
       await analyzeAttachmentWithAI(req.file);
 
     await removeUploadedFile(req.file);
+const questions = extractedText
+  .split("\n")
+  .map(q => q.trim())
+  .filter(q => q.length > 10);
 
-    return res.status(200).json({
-      success: true,
-      data: {
-        extractedText,
-      },
-    });
+return res.status(200).json({
+  success: true,
+  data: {
+    extractedText,
+    questions
+  }
+});
+
   } catch (error) {
     await removeUploadedFile(req.file);
 
@@ -283,6 +292,71 @@ async function analyzeAttachment(req, res) {
         "Could not analyze attachment.",
     });
   }
+}
+async function createQuestionsFromAttachment(req, res) {
+  if (!req.file) {
+    return res.status(400).json({
+      success: false,
+      message: "Attachment required",
+    });
+  }
+try {
+  const extractedText =
+    await analyzeAttachmentWithAI(req.file);
+
+  const questions =
+    splitQuestions(extractedText);
+
+  if (questions.length === 0) {
+    await removeUploadedFile(req.file);
+
+    return res.status(400).json({
+      success: false,
+      message: "No questions detected.",
+    });
+  }
+
+  const created = [];
+
+  for (const questionText of questions) {
+    const question =
+      await questionModel.createQuestion({
+        text: questionText,
+        category:
+          req.body.category || "General",
+        userId: req.user.id,
+      });
+
+    created.push(question);
+  }
+
+  await removeUploadedFile(req.file);
+
+  return res.status(201).json({
+    success: true,
+    created: created.length,
+    data: created,
+  });
+
+} catch (err) {
+  await removeUploadedFile(req.file);
+
+  console.error(err);
+
+  if (err.status === 429) {
+    return res.status(429).json({
+      success: false,
+      message:
+        "AI quota exceeded. Please try again later.",
+    });
+  }
+
+  return res.status(500).json({
+    success: false,
+    message:
+      "Failed to create questions.",
+  });
+}
 }
 async function verifyQuestion(req, res) {
   try {
@@ -336,13 +410,40 @@ async function verifyQuestion(req, res) {
     });
   }
 }
+async function importQuestions(req,res){
+  const {questions,category}=req.body;
+
+const created=[];
+
+for(const q of questions){
+
+const question=
+await questionModel.createQuestion({
+text:q,
+category,
+userId:req.user.id,
+aiContext:null,
+attachment:null
+});
+
+created.push(question);
+
+}
+
+return res.json({
+success:true,
+data:created
+});
+}
 module.exports = {
   getQuestions,
   createQuestion,
+  importQuestions,
   analyzeAttachment,
   likeQuestion,
   dislikeQuestion,
   addComment,
   deleteQuestion,
   verifyQuestion,
+  createQuestionsFromAttachment,
 };
