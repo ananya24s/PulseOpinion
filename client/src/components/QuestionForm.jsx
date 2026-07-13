@@ -41,8 +41,8 @@ export default function QuestionForm({
   const [isAnalyzing, setIsAnalyzing] =
     useState(false);
 
-  const [aiContext, setAiContext] =
-   useState("");
+  const [questions, setQuestions] =
+   useState([]);
 
   const fileInputRef = useRef(null);
 
@@ -107,7 +107,7 @@ export default function QuestionForm({
       );
     }
 
-    return json.data.extractedText;
+    return json.data;
   }
 
   async function handleFileChange(event) {
@@ -140,10 +140,10 @@ export default function QuestionForm({
     setIsAnalyzing(true);
 
     try {
-      const extractedText =
-        await analyzeFile(file);
+      const result =
+       await analyzeFile(file);
 
-      setAiContext(extractedText);
+      setQuestions(result.questions || []);
     } catch (analysisError) {
       setError(
         analysisError.message ||
@@ -197,7 +197,7 @@ export default function QuestionForm({
         trimmed,
         category,
         attachment,
-        aiContext
+        questions
       );
 
       setText("");
@@ -272,35 +272,29 @@ export default function QuestionForm({
         </div>
       )}
 
-      {aiContext && !isAnalyzing && (
-        <div className={styles.aiContextBox}>
-          <div className={styles.aiContextHeader}>
-        <div>
-         <span className={styles.aiContextTitle}>
-           ✨ AI-extracted context
-         </span>
+{questions.length > 0 && !isAnalyzing && (
+  <div className={styles.aiContextBox}>
+    <div className={styles.aiContextHeader}>
+      <div>
+        <span className={styles.aiContextTitle}>
+          ✨ AI detected {questions.length} questions
+        </span>
 
-         <span className={styles.aiContextHint}>
-           Review and edit before posting
-         </span>
+        <span className={styles.aiContextHint}>
+          These will be imported as separate discussions.
+        </span>
+      </div>
+    </div>
+
+    <div className={styles.aiContextTextarea}>
+      {questions.map((question, index) => (
+        <div key={index} style={{ marginBottom: "12px" }}>
+          <strong>Q{index + 1}.</strong> {question}
         </div>
-
-         <span className={styles.aiContextCount}>
-          {aiContext.length} characters
-         </span>
-        </div>
-
-      <textarea
-       className={styles.aiContextTextarea}
-       value={aiContext}
-       rows={7}
-       onChange={(event) =>
-        setAiContext(event.target.value)
-       }
-       aria-label="AI extracted context"
-       />
-       </div>
-     )}
+      ))}
+    </div>
+  </div>
+)}
 
       {attachment && (
         <div
