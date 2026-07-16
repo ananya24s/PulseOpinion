@@ -89,7 +89,7 @@
   border-color: var(--dislike) !important;
 }
 
-/* Character counter row â€” sits right below the textarea */
+/* Character counter row Ã¢â‚¬â€ sits right below the textarea */
 .charRow {
   display: flex;
   justify-content: flex-end;
@@ -116,7 +116,7 @@
   font-weight: 500;
 }
 
-/* Category dropdown â€” styled to match the overall card aesthetic */
+/* Category dropdown Ã¢â‚¬â€ styled to match the overall card aesthetic */
 .categorySelect {
   border: 1.5px solid var(--border);
   border-radius: var(--radius-btn);
@@ -140,7 +140,7 @@
   border-color: var(--accent);
 }
 
-/* Disabled state â€” button looks muted and cursor shows not-allowed */
+/* Disabled state Ã¢â‚¬â€ button looks muted and cursor shows not-allowed */
 .submitBtn:disabled {
   background: var(--border);
   color: var(--text-muted);
@@ -758,5 +758,163 @@
 
   .reviewItem {
     grid-template-columns: 28px minmax(0, 1fr);
+  }
+}
+
+/* Smart duplicate detection */
+.duplicateWarning {
+  margin-top: 12px;
+  padding: 13px;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: 12px;
+  background: rgba(245, 158, 11, 0.07);
+}
+
+.duplicateWarningHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.duplicateWarningHeader > div > span {
+  display: block;
+  color: var(--text-primary);
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.duplicateWarningHeader p {
+  margin: 4px 0 0;
+  color: var(--text-muted);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.duplicateWarningHeader > strong {
+  flex: 0 0 auto;
+  padding: 4px 7px;
+  border-radius: 999px;
+  background: rgba(245, 158, 11, 0.14);
+  color: #b45309;
+  font-size: 10px;
+}
+
+.duplicateMatchList {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin-top: 10px;
+}
+
+.duplicateMatch {
+  padding: 9px 10px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--card);
+}
+
+.duplicateMatch p {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.duplicateMatch span {
+  display: block;
+  margin-top: 4px;
+  color: var(--text-muted);
+  font-size: 10px;
+}
+
+.postAnywayBtn {
+  margin-top: 10px;
+  padding: 7px 10px;
+  border: 1px solid rgba(245, 158, 11, 0.42);
+  border-radius: 8px;
+  background: transparent;
+  color: #b45309;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.postAnywayBtn:hover {
+  background: rgba(245, 158, 11, 0.1);
+}
+
+.duplicateReviewSummary {
+  color: #b45309 !important;
+  font-weight: 650;
+}
+
+.reviewItemDuplicate {
+  border-color: rgba(245, 158, 11, 0.35);
+}
+
+.reviewDuplicateMatch {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 8px;
+  padding: 9px 10px;
+  border: 1px solid rgba(245, 158, 11, 0.28);
+  border-radius: 9px;
+  background: rgba(245, 158, 11, 0.06);
+}
+
+.reviewDuplicateMatch > div {
+  min-width: 0;
+}
+
+.reviewDuplicateMatch strong {
+  color: #b45309;
+  font-size: 10px;
+}
+
+.reviewDuplicateMatch p {
+  margin: 4px 0 0;
+  color: var(--text-primary);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.reviewDuplicateMatch span {
+  display: block;
+  margin-top: 3px;
+  color: var(--text-muted);
+  font-size: 9px;
+}
+
+.reviewDuplicateMatch button {
+  flex: 0 0 auto;
+  padding: 6px 8px;
+  border: 1px solid rgba(245, 158, 11, 0.36);
+  border-radius: 7px;
+  background: var(--card);
+  color: #b45309;
+  font: inherit;
+  font-size: 9px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.reviewDuplicateMatch button:hover {
+  background: rgba(245, 158, 11, 0.1);
+}
+
+@media (max-width: 600px) {
+  .duplicateWarningHeader,
+  .reviewDuplicateMatch {
+    flex-direction: column;
+  }
+
+  .reviewDuplicateMatch button {
+    align-self: flex-start;
   }
 }

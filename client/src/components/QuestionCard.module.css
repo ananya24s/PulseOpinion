@@ -166,14 +166,14 @@
   }
 }
 
-/* Active state — when user has already liked this question */
+/* Active state Ã¢â‚¬â€ when user has already liked this question */
 .likeActive {
   background: var(--like-bg) !important;
   color: var(--like) !important;
   font-weight: 600;
 }
 
-/* Active state — when user has already disliked this question */
+/* Active state Ã¢â‚¬â€ when user has already disliked this question */
 .dislikeActive {
   background: var(--dislike-bg) !important;
   color: var(--dislike) !important;
@@ -659,4 +659,131 @@
 
 .inlineVerificationPending strong {
   color: #94a3b8;
+}
+
+/* PulseBot default answer */
+.pulseBotSection {
+  margin: 0 0 14px;
+}
+
+.pulseBotToggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 11px 13px;
+  border: 1px solid rgba(108, 99, 255, 0.22);
+  border-radius: 12px;
+  background: rgba(108, 99, 255, 0.055);
+  color: var(--text-primary);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background 0.18s ease,
+    border-color 0.18s ease;
+}
+
+.pulseBotToggle:hover {
+  border-color: rgba(108, 99, 255, 0.4);
+  background: rgba(108, 99, 255, 0.09);
+}
+
+.pulseBotToggleLeft {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.pulseBotAvatar {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  flex: 0 0 32px;
+  border-radius: 10px;
+  background: rgba(108, 99, 255, 0.13);
+  font-size: 17px;
+}
+
+.pulseBotToggleLeft strong {
+  display: block;
+  color: var(--text-primary);
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.pulseBotToggleLeft small {
+  display: block;
+  margin-top: 2px;
+  color: var(--text-muted);
+  font-size: 10px;
+}
+
+.pulseBotChevron {
+  color: #6c63ff;
+  font-size: 24px;
+  line-height: 1;
+  transition: transform 0.2s ease;
+}
+
+.pulseBotChevronOpen {
+  transform: rotate(90deg);
+}
+
+.pulseBotContent {
+  margin-top: 8px;
+  padding: 13px 14px;
+  border: 1px solid rgba(108, 99, 255, 0.16);
+  border-radius: 12px;
+  background: rgba(108, 99, 255, 0.035);
+}
+
+.pulseBotContentHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+  color: #6c63ff;
+  font-size: 9px;
+  font-weight: 750;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.pulseBotContent p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.65;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.pulseBotDisclaimer {
+  display: block;
+  margin-top: 10px;
+  padding-top: 9px;
+  border-top: 1px solid rgba(108, 99, 255, 0.12);
+  color: var(--text-muted);
+  font-size: 9px;
+  line-height: 1.45;
+}
+
+:global([data-theme="dark"]) .pulseBotToggle {
+  background: rgba(139, 92, 246, 0.08);
+}
+
+:global([data-theme="dark"]) .pulseBotContent {
+  background: rgba(139, 92, 246, 0.045);
+}
+
+@media (max-width: 600px) {
+  .pulseBotContentHeader {
+    align-items: flex-start;
+    flex-direction: column;
+  }
 }
